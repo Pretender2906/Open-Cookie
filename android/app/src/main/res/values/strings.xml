@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fortune Button</string>
+    <string name="fortune_title">FORTUNE BUTTON</string>
+    <string name="press_button">Press</string>
+    <string name="stats_today">Today %1$d/3</string>
+    <string name="stats_total">Total %1$d</string>
+    <string name="connect_wallet">Connect wallet</string>
+    <string name="onboarding_tagline">Press the button.\nGet a daily fortune on Solana.</string>
+    <string name="onboarding_connect_hint">Opens your Solana wallet to approve Fortune Button.</string>
+    <string name="onboarding_connecting">Connecting…</string>
+    <string name="onboarding_syncing">Syncing…</string>
+    <string name="onboarding_wallet_connected">Wallet connected</string>
+    <string name="chain_data_loading">Syncing…</string>
+    <string name="tx_status_building">Building transaction…</string>
+    <string name="tx_status_wallet">Check your wallet app</string>
+    <string name="tx_status_confirming">Confirming…</string>
+    <string name="tx_status_retrying">Retrying…</string>
+    <string name="offline_banner">Connection lost</string>
+    <string name="retry">Try again</string>
+</resources>

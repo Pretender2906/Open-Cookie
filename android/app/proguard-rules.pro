@@ -1,0 +1,3 @@
+-keep class com.fortunebutton.app.** { *; }
+-keep class com.solanamobile.** { *; }
+-dontwarn org.bouncycastle.**
