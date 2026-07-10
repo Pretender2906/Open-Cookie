@@ -14,6 +14,7 @@ import com.opencookie.app.R
 @Composable
 fun StatCounter(
     callsToday: Int,
+    maxCallsPerDay: Int,
     totalCalls: Long,
     modifier: Modifier = Modifier,
 ) {
@@ -22,7 +23,7 @@ fun StatCounter(
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         Text(
-            text = stringResource(R.string.stats_today, callsToday),
+            text = stringResource(R.string.stats_today, callsToday, maxCallsPerDay),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )

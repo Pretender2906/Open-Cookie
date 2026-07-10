@@ -6,6 +6,7 @@ data class ProgramConfig(
     val adminAuthority: PublicKey,
     val pendingAdmin: PublicKey,
     val priceLamports: Long,
+    val maxCallsPerDay: Int,
     val treasuryBump: Int,
     val configBump: Int,
 ) {

@@ -20,6 +20,7 @@ data class AccountMeta(
 data class UpdateConfigParams(
     val pendingAdmin: PublicKey,
     val priceLamports: Long,
+    val maxCallsPerDay: Int,
 )
 
 object AdminInstructionBuilder {
@@ -30,9 +31,10 @@ object AdminInstructionBuilder {
         val (treasuryPda) = ProgramAddresses.treasuryVault()
         val (programDataPda) = ProgramAddresses.programData()
 
-        val argsBuf = ByteBuffer.allocate(40).order(ByteOrder.LITTLE_ENDIAN)
+        val argsBuf = ByteBuffer.allocate(42).order(ByteOrder.LITTLE_ENDIAN)
         Borsh.writePubkey(argsBuf, params.pendingAdmin)
         Borsh.writeU64(argsBuf, params.priceLamports)
+        Borsh.writeU16(argsBuf, params.maxCallsPerDay)
 
         return TransactionInstruction(
             programId = ProgramAddresses.PROGRAM_ID,
@@ -40,6 +42,7 @@ object AdminInstructionBuilder {
                 AccountMeta(admin, isSigner = true, isWritable = true),
                 AccountMeta(configPda, isSigner = false, isWritable = true),
                 AccountMeta(treasuryPda, isSigner = false, isWritable = true),
+                AccountMeta(ProgramAddresses.PROGRAM_ID, isSigner = false, isWritable = false),
                 AccountMeta(programDataPda, isSigner = false, isWritable = false),
                 AccountMeta(PublicKey.SYSTEM_PROGRAM, isSigner = false, isWritable = false),
             ),
@@ -51,9 +54,10 @@ object AdminInstructionBuilder {
         val discriminator = AnchorDiscriminator.forInstruction("update_config")
         val (configPda) = ProgramAddresses.config()
 
-        val argsBuf = ByteBuffer.allocate(40).order(ByteOrder.LITTLE_ENDIAN)
+        val argsBuf = ByteBuffer.allocate(42).order(ByteOrder.LITTLE_ENDIAN)
         Borsh.writePubkey(argsBuf, params.pendingAdmin)
         Borsh.writeU64(argsBuf, params.priceLamports)
+        Borsh.writeU16(argsBuf, params.maxCallsPerDay)
 
         return TransactionInstruction(
             programId = ProgramAddresses.PROGRAM_ID,

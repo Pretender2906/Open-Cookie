@@ -54,6 +54,7 @@ fun CookieScreen(
             ) {
                 StatCounter(
                     callsToday = uiState.callsToday,
+                    maxCallsPerDay = uiState.maxCallsPerDay,
                     totalCalls = uiState.totalCalls,
                 )
 

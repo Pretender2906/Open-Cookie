@@ -16,7 +16,7 @@ object ReturnDataParser {
         val buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
         val messageIndex = Borsh.readU16(buf)
         val totalCalls = Borsh.readU32(buf)
-        val callsToday = Borsh.readU8(buf)
+        val callsToday = Borsh.readU16(buf)
         return CookieResult(messageIndex, totalCalls, callsToday)
     }
 }

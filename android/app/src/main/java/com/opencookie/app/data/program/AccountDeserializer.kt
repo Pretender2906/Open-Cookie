@@ -16,9 +16,10 @@ object AccountDeserializer {
         val adminAuthority = Borsh.readPubkey(buf)
         val pendingAdmin = Borsh.readPubkey(buf)
         val priceLamports = Borsh.readU64(buf)
+        val maxCallsPerDay = Borsh.readU16(buf)
         val treasuryBump = Borsh.readU8(buf)
         val configBump = Borsh.readU8(buf)
-        return ProgramConfig(adminAuthority, pendingAdmin, priceLamports, treasuryBump, configBump)
+        return ProgramConfig(adminAuthority, pendingAdmin, priceLamports, maxCallsPerDay, treasuryBump, configBump)
     }
 
     fun deserializeUserProfile(data: ByteArray): UserProfile {
@@ -27,7 +28,7 @@ object AccountDeserializer {
         val owner = Borsh.readPubkey(buf)
         val totalCalls = Borsh.readU32(buf)
         val lastDay = Borsh.readI32(buf)
-        val callsToday = Borsh.readU8(buf)
+        val callsToday = Borsh.readU16(buf)
         val bump = Borsh.readU8(buf)
         return UserProfile(owner, totalCalls, lastDay, callsToday, bump)
     }

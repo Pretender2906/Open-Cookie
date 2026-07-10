@@ -6,11 +6,11 @@ pub mod errors;
 pub mod helpers;
 pub mod state;
 
-use constants::{MAX_CALLS_PER_DAY, TREASURY_VAULT_SEED};
+use constants::{TREASURY_VAULT_SEED};
 use contexts::*;
 use errors::OpenCookieError;
 use helpers::{
-    charge_protocol_fee, checked_add_u32, checked_add_u8, current_day_id, derive_config_address,
+    charge_protocol_fee, checked_add_u16, checked_add_u32, current_day_id, derive_config_address,
     derive_treasury_vault_address, ensure_system_vault, generate_message_index, has_pending_admin,
     require_treasury_withdrawal_safe, require_valid_system_account, withdraw_from_treasury,
 };
@@ -26,7 +26,9 @@ pub mod open_cookie {
         ctx: Context<InitializeConfig>,
         pending_admin: Pubkey,
         price_lamports: u64,
+        max_calls_per_day: u16,
     ) -> Result<()> {
+        require!(max_calls_per_day > 0, OpenCookieError::InvalidConfig);
         let (expected_config, config_bump) = derive_config_address();
         require_keys_eq!(
             expected_config,
@@ -45,6 +47,7 @@ pub mod open_cookie {
         config.admin_authority = ctx.accounts.admin.key();
         config.pending_admin = pending_admin;
         config.price_lamports = price_lamports;
+        config.max_calls_per_day = max_calls_per_day;
         config.treasury_bump = treasury_bump;
         config.config_bump = config_bump;
 
@@ -63,7 +66,9 @@ pub mod open_cookie {
         ctx: Context<UpdateConfig>,
         pending_admin: Pubkey,
         price_lamports: u64,
+        max_calls_per_day: u16,
     ) -> Result<()> {
+        require!(max_calls_per_day > 0, OpenCookieError::InvalidConfig);
         require_keys_eq!(
             ctx.accounts.admin.key(),
             ctx.accounts.config.admin_authority,
@@ -73,6 +78,7 @@ pub mod open_cookie {
         let config = &mut ctx.accounts.config;
         config.pending_admin = pending_admin;
         config.price_lamports = price_lamports;
+        config.max_calls_per_day = max_calls_per_day;
         Ok(())
     }
 
@@ -120,7 +126,7 @@ pub mod open_cookie {
         }
 
         require!(
-            profile.calls_today < MAX_CALLS_PER_DAY,
+            profile.calls_today < config.max_calls_per_day,
             OpenCookieError::DailyLimitReached
         );
 
@@ -133,7 +139,7 @@ pub mod open_cookie {
             config.price_lamports,
         )?;
 
-        profile.calls_today = checked_add_u8(profile.calls_today, 1)?;
+        profile.calls_today = checked_add_u16(profile.calls_today, 1)?;
         profile.total_calls = checked_add_u32(profile.total_calls, 1)?;
 
         let message_index = generate_message_index(

@@ -8,8 +8,4 @@ data class UserProfile(
     val lastDay: Int,
     val callsToday: Int,
     val bump: Int,
-) {
-    companion object {
-        const val MAX_CALLS_PER_DAY = 3
-    }
-}
+)

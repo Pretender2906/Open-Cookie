@@ -21,6 +21,14 @@ pub struct InitializeConfig<'info> {
     #[account(mut, seeds = [TREASURY_VAULT_SEED], bump)]
     pub treasury_vault: UncheckedAccount<'info>,
 
+    /// Binds `program_data` to this program so it cannot be swapped for another
+    /// upgradeable program's ProgramData account.
+    #[account(
+        constraint = program.programdata_address()? == Some(program_data.key())
+            @ crate::errors::OpenCookieError::InvalidPda
+    )]
+    pub program: Program<'info, crate::program::OpenCookie>,
+
     /// Ensures only the program upgrade authority can initialize config.
     #[account(
         constraint = program_data.upgrade_authority_address == Some(admin.key())

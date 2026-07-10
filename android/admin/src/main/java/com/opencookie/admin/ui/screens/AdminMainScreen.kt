@@ -306,6 +306,14 @@ private fun ConfigTab(uiState: AdminUiState, viewModel: AdminViewModel) {
         enabled = uiState.isAdminAuthorized,
         colors = fieldColors,
     )
+    ConfigField(
+        label = "Max calls per day",
+        value = form.maxCallsPerDay,
+        hint = "Максимум повідомлень на користувача за добу (on-chain).",
+        onChange = { viewModel.updateConfigForm { copy(maxCallsPerDay = it) } },
+        enabled = uiState.isAdminAuthorized,
+        colors = fieldColors,
+    )
 
     if (uiState.isAdminAuthorized) {
         OutlinedButton(onClick = viewModel::setPendingAdminToWallet, modifier = Modifier.fillMaxWidth()) {

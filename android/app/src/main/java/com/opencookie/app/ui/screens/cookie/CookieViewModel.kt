@@ -27,6 +27,7 @@ import javax.inject.Inject
 
 data class CookieUiState(
     val callsToday: Int = 0,
+    val maxCallsPerDay: Int = 0,
     val totalCalls: Long = 0,
     val cookieMessage: String? = null,
     val transactionState: TransactionState = TransactionState.Idle,
@@ -61,6 +62,7 @@ class CookieViewModel @Inject constructor(
         val profile = session.profile
         CookieUiState(
             callsToday = profile?.callsToday ?: 0,
+            maxCallsPerDay = session.config?.maxCallsPerDay ?: 0,
             totalCalls = profile?.totalCalls ?: 0,
             cookieMessage = cookieMessage,
             transactionState = globalTx.phase,
@@ -72,7 +74,7 @@ class CookieViewModel @Inject constructor(
                 !session.isTransactionInProgress &&
                 !transactionRunner.isActive &&
                 activityResultSenderRegistry.current() != null &&
-                (profile == null || profile.callsToday < UserProfile.MAX_CALLS_PER_DAY),
+                (profile == null || profile.callsToday < (session.config?.maxCallsPerDay ?: 0)),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CookieUiState())
 

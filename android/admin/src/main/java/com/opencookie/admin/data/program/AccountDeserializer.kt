@@ -9,6 +9,7 @@ data class ProtocolConfig(
     val adminAuthority: PublicKey,
     val pendingAdmin: PublicKey,
     val priceLamports: Long,
+    val maxCallsPerDay: Int,
     val treasuryBump: Int,
     val configBump: Int,
 ) {
@@ -24,6 +25,7 @@ object AccountDeserializer {
         val adminAuthority = Borsh.readPubkey(buf)
         val pendingAdmin = Borsh.readPubkey(buf)
         val priceLamports = Borsh.readU64(buf)
+        val maxCallsPerDay = Borsh.readU16(buf)
         val treasuryBump = Borsh.readU8(buf)
         val configBump = Borsh.readU8(buf)
 
@@ -31,6 +33,7 @@ object AccountDeserializer {
             adminAuthority = adminAuthority,
             pendingAdmin = pendingAdmin,
             priceLamports = priceLamports,
+            maxCallsPerDay = maxCallsPerDay,
             treasuryBump = treasuryBump,
             configBump = configBump,
         )

@@ -7,6 +7,7 @@ pub struct Config {
     pub admin_authority: Pubkey,
     pub pending_admin: Pubkey,
     pub price_lamports: u64,
+    pub max_calls_per_day: u16,
     pub treasury_bump: u8,
     pub config_bump: u8,
 }
@@ -22,7 +23,7 @@ pub struct UserProfile {
     pub owner: Pubkey,
     pub total_calls: u32,
     pub last_day: i32,
-    pub calls_today: u8,
+    pub calls_today: u16,
     pub bump: u8,
 }
 
@@ -30,7 +31,7 @@ pub struct UserProfile {
 pub struct CookieResult {
     pub message_index: u16,
     pub total_calls: u32,
-    pub calls_today: u8,
+    pub calls_today: u16,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]

@@ -28,6 +28,7 @@ import javax.inject.Inject
 data class ConfigFormState(
     val pendingAdmin: String = "",
     val priceLamports: String = "",
+    val maxCallsPerDay: String = "",
 )
 
 data class AdminUiState(
@@ -204,6 +205,7 @@ class AdminViewModel @Inject constructor(
             UpdateConfigParams(
                 pendingAdmin = parsePubkeyOrDefault(form.pendingAdmin),
                 priceLamports = form.priceLamports.toLong(),
+                maxCallsPerDay = form.maxCallsPerDay.toInt(),
             )
         }.getOrElse {
             showError("Перевірте поля конфігурації")
@@ -313,5 +315,6 @@ class AdminViewModel @Inject constructor(
     private fun configToForm(config: ProtocolConfig) = ConfigFormState(
         pendingAdmin = config.pendingAdmin.takeUnless { it.isDefault() }?.toBase58() ?: "",
         priceLamports = config.priceLamports.toString(),
+        maxCallsPerDay = config.maxCallsPerDay.toString(),
     )
 }

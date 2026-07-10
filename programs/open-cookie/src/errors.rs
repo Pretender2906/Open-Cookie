@@ -12,6 +12,8 @@ pub enum OpenCookieError {
     UserAlreadyInitialized,
     #[msg("User profile not initialized")]
     UserNotInitialized,
+    #[msg("Invalid config")]
+    InvalidConfig,
     #[msg("Daily limit reached")]
     DailyLimitReached,
     #[msg("Invalid PDA")]

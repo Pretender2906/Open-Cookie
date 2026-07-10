@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "anchor test",
+    "test:unit": "cargo test -p open-cookie && vitest run tests/cookie-result.test.ts tests/messages.test.ts",
     "test:vitest": "vitest run"
   },
   "dependencies": {
