@@ -1,6 +1,6 @@
 <resources>
-    <color name="fortune_orange">#FFFF8C00</color>
-    <color name="fortune_orange_dark">#FFE67E00</color>
+    <color name="cookie_orange">#FFFF8C00</color>
+    <color name="cookie_orange_dark">#FFE67E00</color>
     <color name="background_dark">#FF12100E</color>
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>

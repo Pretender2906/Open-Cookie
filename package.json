@@ -1,10 +1,10 @@
 {
-  "name": "fortune-button",
+  "name": "open-cookie",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pretender2906/Fortune-Button.git"
+    "url": "https://github.com/Pretender2906/Open-Cookie.git"
   },
   "scripts": {
     "test": "anchor test",

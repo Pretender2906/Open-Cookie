@@ -33,11 +33,11 @@ plugins {
 }
 
 android {
-    namespace = "com.fortunebutton.admin"
+    namespace = "com.opencookie.admin"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.fortunebutton.admin"
+        applicationId = "com.opencookie.admin"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

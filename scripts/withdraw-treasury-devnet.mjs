@@ -11,7 +11,7 @@ import {
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const program = anchor.workspace.FortuneButton;
+const program = anchor.workspace.OpenCookie;
 const admin = provider.wallet;
 
 const command = process.argv[2] ?? "status";

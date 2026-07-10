@@ -5,13 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fortune_button = "FrtnBtnPK86hRM2pMF7FesE38MYDi59z9dMuNyfxiq"
+open_cookie = "CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm"
 
 [programs.devnet]
-fortune_button = "FrtnBtnPK86hRM2pMF7FesE38MYDi59z9dMuNyfxiq"
+open_cookie = "CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm"
 
 [programs.mainnet]
-fortune_button = "FrtnBtnPK86hRM2pMF7FesE38MYDi59z9dMuNyfxiq"
+open_cookie = "CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm"
 
 [provider]
 cluster = "devnet"

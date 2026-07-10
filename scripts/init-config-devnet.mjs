@@ -10,7 +10,7 @@ import {
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const program = anchor.workspace.FortuneButton;
+const program = anchor.workspace.OpenCookie;
 const admin = provider.wallet;
 
 const arg1 = process.argv[2];

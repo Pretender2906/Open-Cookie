@@ -1,19 +1,19 @@
-# Fortune Button
+# Open Cookie
 
-Мінімальний Android dApp для [Solana Mobile dApp Store](https://solanamobile.com/) — щоденні ідеї після on-chain натискання кнопки Fortune.
+Мінімальний Android dApp для [Solana Mobile dApp Store](https://solanamobile.com/) — щоденні повідомлення після on-chain «розколу печива».
 
-> Це не гороскоп і не передбачення. Просто короткі щоденні підказки або маленькі завдання.
+> Це не гороскоп і не передбачення. Просто печиво з короткою думкою, порадою або маленьким завданням на день.
 
-Репозиторій: [github.com/Pretender2906/Fortune-Button](https://github.com/Pretender2906/Fortune-Button)
+Репозиторій: [github.com/Pretender2906/Open-Cookie](https://github.com/Pretender2906/Open-Cookie)
 
 ## Архітектура
 
 ```
 Android app (Compose + MWA 2.0)     Android admin (ops)
               ↓                              ↓
-         fortune()                    update_config / accept_admin / withdraw_treasury
+         break_cookie()              update_config / accept_admin / withdraw_treasury
               ↓                              ↓
-              Anchor Program (fortune_button)
+              Anchor Program (open_cookie)
                           ↓
                      Solana RPC
 ```
@@ -26,30 +26,30 @@ Android app (Compose + MWA 2.0)     Android admin (ops)
 | Treasury vault | `["treasury-vault"]` | system-owned PDA для fee |
 | UserProfile | `["user", owner]` | total_calls, calls_today, last_day |
 
-**Інструкції:** `initialize_config`, `update_config`, `accept_admin`, `initialize_user`, `close_user`, `fortune`, `withdraw_treasury`
+**Інструкції:** `initialize_config`, `update_config`, `accept_admin`, `initialize_user`, `close_user`, `break_cookie`, `withdraw_treasury`
 
 **Admin flow (як у Nudge):**
 1. Deployer викликає `initialize_config` (потрібен program upgrade authority)
 2. Admin може призначити `pending_admin` через `update_config`
 3. Новий admin підтверджує через `accept_admin`
-4. Fee з `fortune()` збираються на `treasury-vault` PDA
+4. Fee з `break_cookie()` збираються на `treasury-vault` PDA
 5. Admin виводить через `withdraw_treasury`
 
-**`fortune`** — головна інструкція:
+**`break_cookie`** — головна інструкція:
 1. Скидає лічильник на новий день
 2. Перевіряє ліміт 3/день
 3. Переводить fee на treasury-vault PDA (якщо price > 0)
-4. Генерує `fortune_index` через `hashv(...) % 200`
-5. Повертає `FortuneResult` через `set_return_data`
+4. Генерує `message_index` через `hashv(...) % 200`
+5. Повертає `CookieResult` через `set_return_data`
 
 ### Android
 
 | Модуль | Package | Призначення |
 |--------|---------|-------------|
-| `:app` | `com.fortunebutton.app` | Користувацький dApp — кнопка Fortune |
-| `:admin` | `com.fortunebutton.admin` | Ops — config, admin transfer, treasury withdraw |
+| `:app` | `com.opencookie.app` | Користувацький dApp — Break Cookie |
+| `:admin` | `com.opencookie.admin` | Ops — config, admin transfer, treasury withdraw |
 
-Тексти fortunes зберігаються локально в `android/app/src/main/assets/`.
+Тексти повідомлень зберігаються локально в `android/app/src/main/assets/messages_*.json`.
 
 ## Швидкий старт
 
@@ -86,13 +86,30 @@ cd android
 ./gradlew :admin:assembleDebug
 ```
 
-## Program ID (placeholder)
+## Program ID
 
 ```
-FrtnBtnPK86hRM2pMF7FesE38MYDi59z9dMuNyfxiq
+CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm
 ```
 
-Після `anchor keys sync` оновіть ID у `lib.rs`, `Anchor.toml`, `ProgramAddresses.kt` (app + admin).
+### Синхронізація keypair (після `solana-keygen grind`)
+
+Anchor очікує keypair у `target/deploy/open_cookie-keypair.json` (ім'я crate з `Cargo.toml`).
+
+```bash
+mkdir -p target/deploy
+cp /path/to/CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm.json target/deploy/open_cookie-keypair.json
+
+anchor keys list    # перевірити, що open_cookie = CookK2q...
+anchor keys sync    # оновить lib.rs + Anchor.toml (якщо щось розійшлось)
+anchor build
+```
+
+Після зміни Program ID також оновіть:
+- `programs/open-cookie/src/lib.rs` (`declare_id!`)
+- `Anchor.toml`
+- `scripts/cluster-common.mjs`
+- `ProgramAddresses.kt` (app + admin)
 
 ## Ліцензія
 

@@ -6,7 +6,7 @@ import { configPda } from "./cluster-common.mjs";
 const provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const program = anchor.workspace.FortuneButton;
+const program = anchor.workspace.OpenCookie;
 const admin = provider.wallet;
 
 const pendingAdminArg = process.argv[2];

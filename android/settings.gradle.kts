@@ -15,6 +15,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "FortuneButton"
+rootProject.name = "OpenCookie"
 include(":app")
 include(":admin")

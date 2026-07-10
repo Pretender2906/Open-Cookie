@@ -1,6 +1,6 @@
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 
-export const PROGRAM_ID = new PublicKey("FrtnBtnPK86hRM2pMF7FesE38MYDi59z9dMuNyfxiq");
+export const PROGRAM_ID = new PublicKey("CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm");
 
 export function configPda() {
   return PublicKey.findProgramAddressSync([Buffer.from("config")], PROGRAM_ID)[0];
