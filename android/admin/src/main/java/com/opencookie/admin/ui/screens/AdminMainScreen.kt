@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.opencookie.admin.BuildConfig
 import com.opencookie.admin.domain.model.TxPhase
 import com.opencookie.admin.domain.model.displayName
 import com.opencookie.admin.ui.AdminTab
@@ -84,7 +85,16 @@ fun AdminMainScreen(viewModel: AdminViewModel) {
             contentColor = MaterialTheme.colorScheme.onSurface,
             topBar = {
                 TopAppBar(
-                    title = { Text("Open Cookie Admin") },
+                    title = {
+                        Column {
+                            Text("Open Cookie Admin")
+                            Text(
+                                "v${BuildConfig.VERSION_NAME}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
@@ -281,7 +291,7 @@ private fun ConfigTab(uiState: AdminUiState, viewModel: AdminViewModel) {
 
     StatCard("Admin authority", uiState.adminAuthority ?: "—")
     StatCard("Pending admin", uiState.pendingAdmin ?: "немає")
-    StatCard("Price (on-chain)", uiState.priceDisplay)
+    StatCard("Ціна", uiState.priceDisplay)
 
     OutlinedButton(
         onClick = viewModel::reloadConfigFromChain,
@@ -299,10 +309,10 @@ private fun ConfigTab(uiState: AdminUiState, viewModel: AdminViewModel) {
         colors = fieldColors,
     )
     ConfigField(
-        label = "Price (lamports)",
-        value = form.priceLamports,
-        hint = "Ціна натискання кнопки в lamports. 1 000 000 ≈ 0.001 SOL.",
-        onChange = { viewModel.updateConfigForm { copy(priceLamports = it) } },
+        label = "Ціна (SOL)",
+        value = form.priceSol,
+        hint = "Ціна натискання кнопки в SOL.",
+        onChange = { viewModel.updateConfigForm { copy(priceSol = it) } },
         enabled = uiState.isAdminAuthorized,
         colors = fieldColors,
     )
@@ -398,7 +408,7 @@ private fun TreasuryTab(uiState: AdminUiState, viewModel: AdminViewModel) {
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
     )
-    StatCard("Баланс treasury", uiState.treasuryBalance)
+    StatCard("Баланс treasury (SOL)", uiState.treasuryBalance)
 
     OutlinedTextField(
         value = uiState.withdrawDestination,

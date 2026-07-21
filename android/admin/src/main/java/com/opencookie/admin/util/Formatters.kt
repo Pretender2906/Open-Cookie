@@ -1,27 +1,32 @@
 package com.opencookie.admin.util
 
+import java.math.BigDecimal
+import java.math.RoundingMode
+
+private const val LAMPORTS_PER_SOL = 1_000_000_000L
+
 fun formatLamports(lamports: Long): String {
-    val sol = lamports / 1_000_000_000.0
-    return if (sol >= 0.001) {
-        String.format("%.4f SOL", sol)
-    } else {
-        "$lamports lamports"
-    }
+    val sol = lamportsToSolDecimal(lamports)
+    return "${sol.toPlainString()} SOL"
+}
+
+fun solFromLamports(lamports: Long): String {
+    return lamportsToSolDecimal(lamports).toPlainString()
 }
 
 fun lamportsFromSolInput(input: String): Long? {
     val trimmed = input.trim().replace(",", ".")
     if (trimmed.isEmpty()) return null
     return runCatching {
-        (trimmed.toDouble() * 1_000_000_000).toLong()
+        BigDecimal(trimmed)
+            .multiply(BigDecimal.valueOf(LAMPORTS_PER_SOL))
+            .setScale(0, RoundingMode.HALF_UP)
+            .longValueExact()
     }.getOrNull()
 }
 
-fun formatPriceLamports(lamports: Long): String {
-    val sol = lamports / 1_000_000_000.0
-    return if (sol >= 0.000001) {
-        String.format("%.6f SOL", sol)
-    } else {
-        "$lamports lamports"
-    }
+private fun lamportsToSolDecimal(lamports: Long): BigDecimal {
+    return BigDecimal.valueOf(lamports)
+        .divide(BigDecimal.valueOf(LAMPORTS_PER_SOL), 9, RoundingMode.UNNECESSARY)
+        .stripTrailingZeros()
 }

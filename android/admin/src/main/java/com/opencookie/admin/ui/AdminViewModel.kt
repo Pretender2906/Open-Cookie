@@ -15,8 +15,8 @@ import com.opencookie.admin.domain.model.Cluster
 import com.opencookie.admin.domain.model.TxPhase
 import com.opencookie.admin.util.PublicKey
 import com.opencookie.admin.util.formatLamports
-import com.opencookie.admin.util.formatPriceLamports
 import com.opencookie.admin.util.lamportsFromSolInput
+import com.opencookie.admin.util.solFromLamports
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +27,7 @@ import javax.inject.Inject
 
 data class ConfigFormState(
     val pendingAdmin: String = "",
-    val priceLamports: String = "",
+    val priceSol: String = "",
     val maxCallsPerDay: String = "",
 )
 
@@ -106,8 +106,14 @@ class AdminViewModel @Inject constructor(
                 walletBalance = formatLamports(s.walletBalanceLamports),
                 adminAuthority = config?.adminAuthority?.toBase58(),
                 pendingAdmin = config?.pendingAdmin?.takeUnless { it.isDefault() }?.toBase58(),
-                priceDisplay = config?.let { formatPriceLamports(it.priceLamports) } ?: "—",
-                configForm = config?.let { configToForm(it) } ?: current.configForm,
+                priceDisplay = config?.let { formatLamports(it.priceLamports) } ?: "—",
+                configForm = when {
+                    config == null -> current.configForm
+                    config != current.config -> configToForm(config)
+                    current.configForm.priceSol.isBlank() && current.configForm.maxCallsPerDay.isBlank() ->
+                        configToForm(config)
+                    else -> current.configForm
+                },
             )
         }
     }
@@ -201,10 +207,15 @@ class AdminViewModel @Inject constructor(
     fun submitUpdateConfig() {
         val sender = senderRegistry.current() ?: return
         val form = _uiState.value.configForm
+        val priceLamports = lamportsFromSolInput(form.priceSol)
+        if (priceLamports == null || priceLamports <= 0) {
+            showError("Вкажіть ціну в SOL")
+            return
+        }
         val params = runCatching {
             UpdateConfigParams(
                 pendingAdmin = parsePubkeyOrDefault(form.pendingAdmin),
-                priceLamports = form.priceLamports.toLong(),
+                priceLamports = priceLamports,
                 maxCallsPerDay = form.maxCallsPerDay.toInt(),
             )
         }.getOrElse {
@@ -314,7 +325,7 @@ class AdminViewModel @Inject constructor(
 
     private fun configToForm(config: ProtocolConfig) = ConfigFormState(
         pendingAdmin = config.pendingAdmin.takeUnless { it.isDefault() }?.toBase58() ?: "",
-        priceLamports = config.priceLamports.toString(),
+        priceSol = solFromLamports(config.priceLamports),
         maxCallsPerDay = config.maxCallsPerDay.toString(),
     )
 }
