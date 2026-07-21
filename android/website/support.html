@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - Open Cookie</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional" rel="stylesheet">
+</head>
+<body class="no-transition">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <span class="logo-icon"></span>
+                    Open Cookie
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="support.html">Support</a></li>
+                    <li><a href="privacy.html">Privacy</a></li>
+                    <li><a href="terms.html">Terms</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="content-page">
+        <div class="container">
+            <h1 class="reveal">Support</h1>
+
+            <section class="reveal">
+                <p>Open Cookie is still in development. If you are testing a build, have feedback, or found a bug, reach out below.</p>
+
+                <div class="card" style="margin-top: 40px;">
+                    <h3>Contact</h3>
+                    <p>Support email — select the address below to copy it, or use the buttons.</p>
+                    <div class="contact-block">
+                        <label class="contact-label" for="support-email">Email</label>
+                        <input
+                            type="text"
+                            class="contact-email"
+                            id="support-email"
+                            value="opencookie.sol@gmail.com"
+                            readonly
+                            aria-label="Support email address"
+                            onclick="this.select()"
+                        >
+                        <div class="contact-actions">
+                            <a href="mailto:opencookie.sol@gmail.com" class="btn btn-secondary">Send email</a>
+                            <button type="button" class="btn btn-ghost" data-copy="#support-email">Copy address</button>
+                        </div>
+                        <p class="copy-feedback" id="copy-feedback" aria-live="polite"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section style="margin-top: 80px;">
+                <h2 class="reveal">Common questions</h2>
+                <div class="grid">
+                    <div class="card reveal">
+                        <h3>Where can I download Open Cookie?</h3>
+                        <p>Not in the Solana dApp Store yet. We are preparing the release. Install links will appear on the homepage when the app is published.</p>
+                    </div>
+                    <div class="card reveal">
+                        <h3>What happens when I break a cookie?</h3>
+                        <p>You approve a Solana transaction that calls the Open Cookie program. The program updates your on-chain profile, may collect a small configured fee to the program treasury, and returns a message index. The readable text comes from messages bundled inside the Android app.</p>
+                    </div>
+                    <div class="card reveal">
+                        <h3>How many breaks per day?</h3>
+                        <p>The on-chain program enforces a daily limit (configured in program settings). When the limit is reached, you need to wait until the next day.</p>
+                    </div>
+                    <div class="card reveal">
+                        <h3>Does Open Cookie hold my funds?</h3>
+                        <p>No. It is non-custodial. Private keys remain in your wallet. You approve each transaction yourself through Mobile Wallet Adapter.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    &copy; <span id="current-year"></span> Open Cookie.
+                </div>
+                <div class="footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="privacy.html">Privacy Policy</a>
+                    <a href="terms.html">Terms of Service</a>
+                </div>
+            </div>
+            <p class="footer-publisher">
+                Published by <a href="https://pretender-labs.pages.dev/" target="_blank" rel="noopener noreferrer">Pretender Labs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

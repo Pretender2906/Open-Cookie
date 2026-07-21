@@ -26,7 +26,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.join
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.select
@@ -101,7 +100,7 @@ class WalletConnectionManager @Inject constructor(
                 is TransactionResult.Success -> {
                     syncAuthFromResult(result.authResult)
                     val signedTx = result.successPayload?.signedPayloads?.firstOrNull()
-                    if (signedTx.isNullOrEmpty()) Result.failure(AppError.WalletRejected)
+                    if (signedTx == null || signedTx.isEmpty()) Result.failure(AppError.WalletRejected)
                     else Result.success(signedTx)
                 }
                 is TransactionResult.NoWalletFound -> Result.failure(AppError.WalletNotFound)

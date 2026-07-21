@@ -157,7 +157,7 @@ class TransactionOrchestrator @Inject constructor(
             val meta = rpcClient.getTransaction(signature).getOrNull()
             val returnData = meta?.returnData
             if (returnData != null) {
-                val bytes = rpcClient.decodeReturnData(returnData) ?: continue
+                val bytes = rpcClient.decodeReturnData(returnData) ?: return@repeat
                 val parsed = ReturnDataParser.parseCookieResult(bytes)
                 return Result.success(
                     BreakCookieTxResult(signature, parsed.messageIndex, parsed.totalCalls, parsed.callsToday),

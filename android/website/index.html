@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Open Cookie — a minimal Solana Mobile dApp. Break the cookie on-chain and get a daily thought, tip, or small task. Currently in development.">
+    <title>Open Cookie — Daily Messages on Solana</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="alternate icon" type="image/png" href="icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional" rel="stylesheet">
+</head>
+<body class="no-transition">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <span class="logo-icon"></span>
+                    Open Cookie
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="support.html">Support</a></li>
+                    <li><a href="privacy.html">Privacy</a></li>
+                    <li><a href="terms.html">Terms</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="cookie-container reveal">
+                    <div class="cookie-wrapper">
+                        <div class="cookie-glow"></div>
+                        <div class="cookie-body">
+                            <div class="cookie-star"></div>
+                        </div>
+                    </div>
+                </div>
+                <h1 class="reveal">Open Cookie</h1>
+                <p class="subtitle reveal">Break the cookie. Get a daily message on Solana.</p>
+                <p class="description reveal">
+                    A minimal Android dApp for Solana Mobile. Tap <strong>Break Cookie</strong>, approve the transaction in your wallet, and read a short thought, tip, or small task for the day.
+                </p>
+                <p class="description reveal" style="margin-top: -24px; font-size: 1.05rem;">
+                    Not a horoscope or a prediction — just a fortune cookie moment on-chain.
+                </p>
+                <div class="hero-btns reveal">
+                    <span class="badge-soon">Coming soon to Solana dApp Store</span>
+                </div>
+                <p class="store-note reveal">The app is in active development and not published yet. This page exists for wallet identity and project info.</p>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title reveal">How it works</h2>
+                <div class="steps">
+                    <div class="step reveal">
+                        <div class="step-num">1</div>
+                        <h3>Connect wallet</h3>
+                        <p>Open Cookie uses Solana Mobile Wallet Adapter. Your keys stay in Phantom, Solflare, or another wallet app you trust.</p>
+                    </div>
+                    <div class="step reveal">
+                        <div class="step-num">2</div>
+                        <h3>Break Cookie</h3>
+                        <p>Each break sends a <code>break_cookie</code> transaction to the Open Cookie program. You review and approve every transfer and fee in your wallet.</p>
+                    </div>
+                    <div class="step reveal">
+                        <div class="step-num">3</div>
+                        <h3>Read your message</h3>
+                        <p>The program returns a message index on-chain. The app maps it to one of 1000 short English messages stored locally on your device.</p>
+                    </div>
+                </div>
+
+                <div class="note-box reveal">
+                    Daily limit and optional program fee are set on-chain in program config. Network fees always apply. Limits reset per calendar day.
+                </div>
+            </div>
+        </section>
+
+        <section class="features" style="padding-top: 0;">
+            <div class="container">
+                <h2 class="section-title reveal">What to expect</h2>
+                <div class="grid">
+                    <div class="card reveal">
+                        <div class="card-icon"><div class="card-icon-star"></div></div>
+                        <h3>Non-custodial</h3>
+                        <p>We never ask for your seed phrase. Open Cookie only builds transactions and sends them to your wallet for signature.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><div class="card-icon-star"></div></div>
+                        <h3>No account sign-up</h3>
+                        <p>Your wallet address is enough. No email, username, or password inside the app.</p>
+                    </div>
+                    <div class="card reveal">
+                        <div class="card-icon"><div class="card-icon-star"></div></div>
+                        <h3>Public on-chain activity</h3>
+                        <p>Breaks are normal Solana transactions. Your wallet address and on-chain profile data are visible on public explorers.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    &copy; <span id="current-year"></span> Open Cookie. In development.
+                </div>
+                <div class="footer-links">
+                    <a href="privacy.html">Privacy Policy</a>
+                    <a href="terms.html">Terms of Service</a>
+                    <a href="support.html">Support</a>
+                </div>
+            </div>
+            <p class="footer-publisher">
+                Published by <a href="https://pretender-labs.pages.dev/" target="_blank" rel="noopener noreferrer">Pretender Labs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

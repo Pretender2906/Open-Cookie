@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Open Cookie</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional" rel="stylesheet">
+</head>
+<body class="no-transition">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <span class="logo-icon"></span>
+                    Open Cookie
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="support.html">Support</a></li>
+                    <li><a href="privacy.html">Privacy</a></li>
+                    <li><a href="terms.html">Terms</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="content-page">
+        <div class="container">
+            <h1 class="reveal">Privacy Policy</h1>
+            <p class="reveal" style="color: var(--text-muted); margin-bottom: 40px;">Effective Date: July 21, 2026</p>
+
+            <section class="reveal">
+                <h2>1. Information We Collect</h2>
+                <p>Open Cookie does not require users to provide personal information such as names, email addresses, or phone numbers. The application does not intentionally collect personal information from users. However, technical information such as IP addresses may be processed by third-party service providers necessary for the operation of the application, including wallet providers, RPC providers, and network infrastructure services.</p>
+            </section>
+
+            <section class="reveal">
+                <h2>2. Blockchain Data</h2>
+                <p>Blockchain transactions are public by nature. Any wallet address and transaction submitted to the Solana blockchain may be publicly visible through blockchain explorers and other third-party services. By using Open Cookie, you acknowledge that your interactions with the Solana network are transparent and public.</p>
+            </section>
+
+            <section class="reveal">
+                <h2>3. Non-Custodial Design</h2>
+                <p>Open Cookie is a non-custodial application. This means:</p>
+                <ul>
+                    <li>We <strong>do not store</strong> or have access to your private keys.</li>
+                    <li>We <strong>never</strong> ask for, store, or receive access to your seed phrase (recovery phrase).</li>
+                    <li>All digital assets remain in your control within your chosen wallet application.</li>
+                </ul>
+            </section>
+
+            <section class="reveal">
+                <h2>4. Solana Mobile Wallet Adapter</h2>
+                <p>Open Cookie utilizes the Solana Mobile Wallet Adapter (MWA) protocol to connect with your preferred mobile wallet. This protocol ensures that your private keys and signing processes remain within your trusted wallet application. Open Cookie only requests permission to submit transaction payloads to your wallet for review and signature.</p>
+            </section>
+
+            <section class="reveal">
+                <h2>5. Third-Party Services</h2>
+                <p>Open Cookie relies on third-party infrastructure including wallet applications, RPC providers, and the Solana blockchain network. These services operate independently and may have their own privacy policies. While Open Cookie is designed to operate securely, no software or blockchain network can guarantee absolute security. We recommend reviewing the privacy practices of any third-party services you interact with through our application.</p>
+            </section>
+
+            <section class="reveal">
+                <h2>6. Changes To This Policy</h2>
+                <p>This Privacy Policy may be updated from time to time. Changes will be reflected on this page with an updated effective date. We encourage users to periodically review this page for the latest information on our privacy practices.</p>
+            </section>
+
+            <section class="reveal">
+                <h2>7. Contact Information</h2>
+                <p>If you have any questions about this Privacy Policy, please contact us:</p>
+                <div class="contact-block">
+                    <label class="contact-label" for="privacy-email">Email</label>
+                    <input
+                        type="text"
+                        class="contact-email"
+                        id="privacy-email"
+                        value="opencookie.sol@gmail.com"
+                        readonly
+                        aria-label="Privacy contact email address"
+                        onclick="this.select()"
+                    >
+                    <div class="contact-actions">
+                        <a href="mailto:opencookie.sol@gmail.com" class="btn btn-secondary">Send email</a>
+                        <button type="button" class="btn btn-ghost" data-copy="#privacy-email">Copy address</button>
+                    </div>
+                    <p class="copy-feedback" aria-live="polite"></p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    &copy; <span id="current-year"></span> Open Cookie.
+                </div>
+                <div class="footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="terms.html">Terms of Service</a>
+                    <a href="support.html">Support</a>
+                </div>
+            </div>
+            <p class="footer-publisher">
+                Published by <a href="https://pretender-labs.pages.dev/" target="_blank" rel="noopener noreferrer">Pretender Labs</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
