@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Open Cookie Admin</string>
+    <string name="asset_statements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://open-cookie.pages.dev\" } }]</string>
 </resources>

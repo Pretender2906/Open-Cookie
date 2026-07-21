@@ -4,7 +4,9 @@
     <string name="cookie_title">OPEN COOKIE</string>
     <string name="break_cookie">Break Cookie</string>
     <string name="stats_today">Today %1$d/%2$d</string>
+    <string name="stats_today_label">Today</string>
     <string name="stats_total">Total %1$d</string>
+    <string name="stats_total_label">Total</string>
     <string name="connect_wallet">Connect wallet</string>
     <string name="onboarding_tagline">Break the cookie.\nGet a daily message on Solana.</string>
     <string name="onboarding_connect_hint">Opens your Solana wallet to approve Open Cookie.</string>
@@ -19,4 +21,5 @@
     <string name="offline_banner">Connection lost</string>
     <string name="retry">Try again</string>
     <string name="dismiss_message">Dismiss</string>
+    <string name="asset_statements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://open-cookie.pages.dev\" } }]</string>
 </resources>

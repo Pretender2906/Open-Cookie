@@ -62,3 +62,28 @@ After updating the file, redeploy Pages and confirm:
 `https://open-cookie.pages.dev/.well-known/assetlinks.json`
 
 Must return JSON with `Content-Type: application/json` and no redirects (`_headers` handles this on Cloudflare).
+
+## Wallet keeps asking "I trust this site"
+
+The wallet checks that your **installed APK signature** matches `assetlinks.json` on `open-cookie.pages.dev`.
+
+1. **App Links in manifest** — both `:app` and `:admin` must declare `android:autoVerify="true"` for `https://open-cookie.pages.dev` (required by MWA spec).
+2. **Matching fingerprint** — run from repo root:
+   ```powershell
+   .\scripts\generate-assetlinks.ps1
+   ```
+   For release builds, append the release / dApp Store signing cert:
+   ```powershell
+   .\scripts\generate-assetlinks.ps1 -Fingerprint "AA:BB:..." -Append
+   ```
+   Commit, push, wait for Cloudflare redeploy.
+3. **Reinstall the app** on the phone after manifest or assetlinks changes. Android re-verifies domain links on install (~20 seconds).
+4. **Same build type** — if you install `release` APK but assetlinks only lists `debug` fingerprint (or vice versa), verification fails every time and the wallet will keep showing the trust checkbox.
+
+Verify on device (USB debugging):
+```bash
+adb shell pm get-app-links com.opencookie.app
+```
+Look for `open-cookie.pages.dev: verified`.
+
+Or in Android settings: **Apps → Open Cookie → Open by default → Supported web addresses**.

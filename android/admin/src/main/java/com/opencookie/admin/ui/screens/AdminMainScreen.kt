@@ -292,6 +292,7 @@ private fun ConfigTab(uiState: AdminUiState, viewModel: AdminViewModel) {
     StatCard("Admin authority", uiState.adminAuthority ?: "—")
     StatCard("Pending admin", uiState.pendingAdmin ?: "немає")
     StatCard("Ціна", uiState.priceDisplay)
+    StatCard("Max повідомлень / добу", uiState.config?.maxCallsPerDay?.toString() ?: "—")
 
     OutlinedButton(
         onClick = viewModel::reloadConfigFromChain,
