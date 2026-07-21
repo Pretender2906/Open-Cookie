@@ -89,7 +89,7 @@ cd android
 ## Program ID
 
 ```
-CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm
+CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf
 ```
 
 ### Синхронізація keypair (після `solana-keygen grind`)
@@ -98,9 +98,9 @@ Anchor очікує keypair у `target/deploy/open_cookie-keypair.json` (ім'я
 
 ```bash
 mkdir -p target/deploy
-cp /path/to/CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm.json target/deploy/open_cookie-keypair.json
+cp /path/to/CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf.json target/deploy/open_cookie-keypair.json
 
-anchor keys list    # перевірити, що open_cookie = CookK2q...
+anchor keys list    # перевірити, що open_cookie = Cookn...
 anchor keys sync    # оновить lib.rs + Anchor.toml (якщо щось розійшлось)
 anchor build
 ```

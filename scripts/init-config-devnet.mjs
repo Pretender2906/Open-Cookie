@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import {
   configPda,
@@ -33,10 +34,10 @@ let maxCallsPerDay = DEFAULT_MAX_CALLS_PER_DAY;
 
 if (arg2 && !/^\d+$/.test(arg1)) {
   pendingAdmin = new PublicKey(arg1);
-  priceLamports = new anchor.BN(arg2);
+  priceLamports = new BN(arg2);
   if (arg3) maxCallsPerDay = Number(arg3);
 } else {
-  priceLamports = new anchor.BN(arg1);
+  priceLamports = new BN(arg1);
   if (arg2) maxCallsPerDay = Number(arg2);
 }
 

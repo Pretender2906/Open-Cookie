@@ -4,7 +4,7 @@ import com.opencookie.admin.util.PublicKey
 
 object ProgramAddresses {
 
-    val PROGRAM_ID = PublicKey("CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm")
+    val PROGRAM_ID = PublicKey("CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf")
 
     fun config(): Pair<PublicKey, Int> =
         PublicKey.findProgramAddress(listOf("config".toByteArray()), PROGRAM_ID)

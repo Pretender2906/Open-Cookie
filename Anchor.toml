@@ -5,13 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-open_cookie = "CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm"
+open_cookie = "CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf"
 
 [programs.devnet]
-open_cookie = "CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm"
+open_cookie = "CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf"
 
 [programs.mainnet]
-open_cookie = "CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm"
+open_cookie = "CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf"
 
 [provider]
 cluster = "devnet"

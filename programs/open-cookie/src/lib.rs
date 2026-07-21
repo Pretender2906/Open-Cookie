@@ -16,7 +16,7 @@ use helpers::{
 };
 use state::{CookieResult, WithdrawTreasuryArgs};
 
-declare_id!("CookK2qhhmsrfWH3oSTZMxmFC4aV5E7fBquf2AX6TqBm");
+declare_id!("CooknomesWJ3KdJUUYfgXBycS19hqDNS9riBavo2Gfuf");
 
 #[program]
 pub mod open_cookie {

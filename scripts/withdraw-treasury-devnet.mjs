@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import {
   configPda,
@@ -34,7 +35,7 @@ if (command === "withdraw") {
   }
 
   const sig = await program.methods
-    .withdrawTreasury({ lamports: new anchor.BN(lamports.toString()) })
+    .withdrawTreasury({ lamports: new BN(lamports.toString()) })
     .accounts({
       admin: admin.publicKey,
       config: configPda(),

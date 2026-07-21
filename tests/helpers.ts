@@ -1,4 +1,3 @@
-import { expect } from "vitest";
 import { PublicKey } from "@solana/web3.js";
 
 export const MESSAGE_COUNT = 1000;
@@ -54,18 +53,29 @@ export async function expectAnchorError(
   promise: Promise<unknown>,
   code: number,
 ): Promise<void> {
+  const expectedName = Object.entries(ERROR_CODES).find(([, value]) => value === code)?.[0];
+
   try {
     await promise;
     throw new Error(`Expected Anchor error ${code}, but instruction succeeded`);
   } catch (err: unknown) {
     const anchorErr = err as {
-      error?: { errorCode?: { code?: number } };
+      error?: { errorCode?: { number?: number; code?: number | string; name?: string } };
       code?: number;
     };
-    const actual = anchorErr.error?.errorCode?.code ?? anchorErr.code;
-    if (actual === undefined) {
-      throw err;
+    const errorCode = anchorErr.error?.errorCode;
+    const actualNumber =
+      errorCode?.number ??
+      (typeof errorCode?.code === "number" ? errorCode.code : undefined) ??
+      (typeof anchorErr.code === "number" ? anchorErr.code : undefined);
+    const actualName =
+      errorCode?.name ??
+      (typeof errorCode?.code === "string" ? errorCode.code : undefined);
+
+    if (actualNumber === code || actualName === expectedName) {
+      return;
     }
-    expect(actual).toBe(code);
+
+    throw err;
   }
 }

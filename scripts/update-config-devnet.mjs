@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { configPda } from "./cluster-common.mjs";
 
@@ -24,7 +25,7 @@ const ZERO = new PublicKey(Buffer.alloc(32));
 const pendingAdmin = pendingAdminArg && !/^\d+$/.test(pendingAdminArg)
   ? new PublicKey(pendingAdminArg)
   : ZERO;
-const priceLamports = new anchor.BN(
+const priceLamports = new BN(
   pendingAdminArg && /^\d+$/.test(pendingAdminArg) ? pendingAdminArg : priceArg,
 );
 const maxCallsPerDay = Number(

@@ -158,8 +158,14 @@ describe("open-cookie integration", () => {
     });
 
     it("enforces the configurable daily limit from config", async () => {
-      const profile = await program.account.userProfile.fetch(userProfilePda);
-      const atLimit = profile.callsToday;
+      let profile = await program.account.userProfile.fetch(userProfilePda);
+      let atLimit = profile.callsToday;
+
+      if (atLimit === 0) {
+        await breakCookie();
+        profile = await program.account.userProfile.fetch(userProfilePda);
+        atLimit = profile.callsToday;
+      }
 
       await updateConfig(atLimit);
 
@@ -193,8 +199,6 @@ describe("open-cookie integration", () => {
 
   describe("treasury", () => {
     it("withdraws lamports to a destination chosen by admin", async () => {
-      const destination = anchor.web3.Keypair.generate();
-
       const vaultBefore = await provider.connection.getBalance(treasuryVaultPda);
       const rentMin = await provider.connection.getMinimumBalanceForRentExemption(0);
       const maxWithdraw = vaultBefore - rentMin;
@@ -208,7 +212,7 @@ describe("open-cookie integration", () => {
           admin: admin.publicKey,
           config: configPda,
           treasuryVault: treasuryVaultPda,
-          destination: destination.publicKey,
+          destination: admin.publicKey,
           systemProgram: SystemProgram.programId,
         })
         .rpc();
