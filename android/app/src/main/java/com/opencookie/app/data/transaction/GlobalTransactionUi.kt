@@ -30,6 +30,13 @@ class GlobalTransactionUi @Inject constructor() {
     fun reset() {
         _state.value = State()
     }
+
+    companion object {
+        fun isActivePhase(phase: TransactionState): Boolean =
+            phase !is TransactionState.Idle &&
+                phase !is TransactionState.Confirmed &&
+                phase !is TransactionState.Failed
+    }
 }
 
 fun canStartTransaction(

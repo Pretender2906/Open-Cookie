@@ -19,7 +19,7 @@ sealed class AppError(val userMessage: String, cause: Throwable? = null) : Excep
     data object WalletClusterMismatch :
         AppError(
             if (BuildConfig.DEBUG) {
-                "App and wallet are on different networks — match Devnet/Mainnet, then try again"
+                "Wallet session was on another network — open Profile, log out, reconnect on Devnet"
             } else {
                 "App and wallet are on different networks — set your wallet to Mainnet, then try again"
             },

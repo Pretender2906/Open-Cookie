@@ -52,7 +52,10 @@ class WalletConnectionManager @Inject constructor(
     fun restoreSessionFromDisk() {
         val session = appSession.state.value
         applyBlockchainFromSession()
-        walletAdapter.applyPersistedSession(session.authToken, session.walletUriBase)
+        walletAdapter.applyPersistedSession(
+            resolveAuthTokenForCluster(session),
+            session.walletUriBase,
+        )
     }
 
     suspend fun connect(forceAuthorize: Boolean = false): Result<ConnectResult> {
@@ -64,7 +67,10 @@ class WalletConnectionManager @Inject constructor(
             walletAdapter.clearWalletSession()
         } else {
             val session = appSession.state.value
-            walletAdapter.applyPersistedSession(session.authToken, session.walletUriBase)
+            walletAdapter.applyPersistedSession(
+                resolveAuthTokenForCluster(session),
+                session.walletUriBase,
+            )
         }
 
         return try {
@@ -87,7 +93,12 @@ class WalletConnectionManager @Inject constructor(
 
     suspend fun signTransaction(txBytes: ByteArray, feePayerBase58: String): Result<ByteArray> {
         return try {
-            WalletFailureDiagnostics.logSignAndSendAttempt(txBytes, feePayerBase58)
+            WalletFailureDiagnostics.logSignAndSendAttempt(
+                txBytes,
+                feePayerBase58,
+                walletAdapter.blockchain.fullName,
+                rpcClient.rpcEndpoint,
+            )
             prepareWalletSession()
             var result = transactSign(txBytes) ?: return Result.failure(AppError.WalletSigningInterrupted)
             if (result is TransactionResult.Failure && walletAdapter.authToken != null && isAuthorizationError(result.e)) {
@@ -136,10 +147,39 @@ class WalletConnectionManager @Inject constructor(
         )
     }
 
-    private fun prepareWalletSession() {
+    private suspend fun prepareWalletSession() {
         applyBlockchainFromSession()
         val session = appSession.state.value
-        walletAdapter.applyPersistedSession(session.authToken, session.walletUriBase)
+        val authToken = resolveAuthTokenForCluster(session)
+        if (authToken == null && session.authToken != null) {
+            appSession.invalidateWalletAuthorization()
+            appSession.persistToDisk()
+        }
+        walletAdapter.applyPersistedSession(authToken, session.walletUriBase)
+        Log.d(
+            TAG,
+            "prepareWalletSession cluster=${session.cluster.cluster.name} " +
+                "chain=${walletAdapter.blockchain.fullName} rpc=${rpcClient.rpcEndpoint} " +
+                "authToken=${authToken?.take(8)}",
+        )
+    }
+
+    /**
+     * MWA legacy wallets reauthorize without a chain hint and may keep a mainnet session even when
+     * the app profile shows Devnet. Drop mismatched tokens so authorize() runs with solana:devnet.
+     */
+    private fun resolveAuthTokenForCluster(session: AppSession.SessionState): String? {
+        val token = session.authToken ?: return null
+        val boundCluster = session.walletAuthCluster
+        val currentCluster = session.cluster.cluster.name
+        if (boundCluster == null || boundCluster != currentCluster) {
+            Log.w(
+                TAG,
+                "Ignoring persisted auth token — boundCluster=$boundCluster current=$currentCluster",
+            )
+            return null
+        }
+        return token
     }
 
     private suspend fun transactConnect(): TransactionResult<MobileWalletAdapterClient.AuthorizationResult> {
@@ -355,6 +395,44 @@ class WalletConnectionManager @Inject constructor(
     }
 
     private fun mapWalletError(e: Throwable): AppError = WalletSignErrorMapper.fromException(e)
+
+    suspend fun disconnect() {
+        val sender = activityResultSenderRegistry.current()
+        applyBlockchainFromSession()
+        val session = appSession.state.value
+        walletAdapter.applyPersistedSession(session.authToken, session.walletUriBase)
+        try {
+            if (sender == null) {
+                Log.w(TAG, "disconnect() no activity sender")
+            } else {
+                Log.d(TAG, "disconnect() dispatching MWA deauthorize")
+                val result = runWalletTransact("disconnect") {
+                    withTimeout(15_000L) {
+                        walletAdapter.disconnect(sender)
+                    }
+                }
+                when (result) {
+                    is TransactionResult.Success ->
+                        Log.d(TAG, "disconnect() wallet deauthorized")
+                    is TransactionResult.Failure ->
+                        Log.w(TAG, "disconnect() failure: ${result.message}")
+                    is TransactionResult.NoWalletFound ->
+                        Log.w(TAG, "disconnect() no wallet found")
+                    null ->
+                        Log.w(TAG, "disconnect() timed out or abandoned")
+                }
+            }
+        } catch (e: CancellationException) {
+            Log.w(TAG, "disconnect() cancelled", e)
+        } catch (e: ConcurrentCancellationException) {
+            Log.w(TAG, "disconnect() cancelled", e)
+        } catch (e: Exception) {
+            Log.w(TAG, "disconnect() exception", e)
+        } finally {
+            Log.d(TAG, "disconnect() final logout")
+            appSession.logout()
+        }
+    }
 
     companion object {
         private const val TAG = "WalletConnection"

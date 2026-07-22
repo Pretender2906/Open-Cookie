@@ -28,6 +28,7 @@ class AppSession @Inject constructor(
     data class SessionState(
         val walletAddress: PublicKey? = null,
         val authToken: String? = null,
+        val walletAuthCluster: String? = null,
         val walletUriBase: Uri? = null,
         val cluster: ClusterConfig = ClusterDefaults.initialCluster(),
         val clusterLocked: Boolean = false,
@@ -73,6 +74,7 @@ class AppSession @Inject constructor(
             it.copy(
                 walletAddress = address,
                 authToken = authToken,
+                walletAuthCluster = it.cluster.cluster.name,
                 walletUriBase = boundUri,
                 profile = null,
                 isProfileInitialized = false,
@@ -82,11 +84,18 @@ class AppSession @Inject constructor(
 
     fun updateWalletSession(address: PublicKey, authToken: String, walletUriBase: Uri? = null) {
         val boundUri = walletUriBase?.takeIf { it.scheme == "https" }
-        _state.update { it.copy(walletAddress = address, authToken = authToken, walletUriBase = boundUri) }
+        _state.update {
+            it.copy(
+                walletAddress = address,
+                authToken = authToken,
+                walletAuthCluster = it.cluster.cluster.name,
+                walletUriBase = boundUri,
+            )
+        }
     }
 
     fun invalidateWalletAuthorization() {
-        _state.update { it.copy(authToken = null) }
+        _state.update { it.copy(authToken = null, walletAuthCluster = null) }
     }
 
     fun lockCluster() {
@@ -133,14 +142,20 @@ class AppSession @Inject constructor(
     suspend fun persistToDisk() {
         val s = _state.value
         s.walletAddress?.let { preferencesStore.saveWalletAddress(it.toBase58()) }
-        s.authToken?.let { preferencesStore.saveAuthToken(it) }
+        if (s.authToken != null) {
+            preferencesStore.saveAuthToken(s.authToken)
+            s.walletAuthCluster?.let { preferencesStore.saveWalletAuthCluster(it) }
+        } else {
+            preferencesStore.clearWalletAuth()
+        }
         s.walletUriBase?.let { preferencesStore.saveWalletUriBase(it.toString()) }
         preferencesStore.saveCluster(s.cluster.cluster.name)
     }
 
     suspend fun restoreFromDisk() {
         val walletStr = preferencesStore.getWalletAddress()
-        val authToken = preferencesStore.getAuthToken()
+        var authToken = preferencesStore.getAuthToken()
+        val walletAuthCluster = preferencesStore.getWalletAuthCluster()
         val walletUriBaseStr = preferencesStore.getWalletUriBase()
         val clusterStr = preferencesStore.getCluster()
 
@@ -152,6 +167,13 @@ class AppSession @Inject constructor(
             else -> ClusterDefaults.initialCluster()
         }
 
+        val currentClusterName = clusterConfig.cluster.name
+        if (authToken != null &&
+            (walletAuthCluster == null || walletAuthCluster != currentClusterName)
+        ) {
+            authToken = null
+        }
+
         val walletPubkey = walletStr?.let { runCatching { PublicKey(it) }.getOrNull() }
         val walletUriBase = walletUriBaseStr?.let {
             runCatching { Uri.parse(it) }.getOrNull()?.takeIf { uri -> uri.scheme == "https" }
@@ -161,6 +183,7 @@ class AppSession @Inject constructor(
             it.copy(
                 walletAddress = walletPubkey,
                 authToken = authToken,
+                walletAuthCluster = authToken?.let { walletAuthCluster?.takeIf { cluster -> cluster == currentClusterName } },
                 walletUriBase = walletUriBase,
                 cluster = clusterConfig,
                 clusterLocked = walletPubkey != null && !authToken.isNullOrBlank(),

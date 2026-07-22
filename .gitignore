@@ -9,6 +9,7 @@ local.properties
 keystore.properties
 *.jks
 .gradle/
+android/.gradle-user/
 build/
 .idea/
 *.iml

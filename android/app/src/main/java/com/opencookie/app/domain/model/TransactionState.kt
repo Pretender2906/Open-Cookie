@@ -23,4 +23,5 @@ data class PendingTransaction(
 enum class TransactionOrigin {
     BreakCookie,
     Onboarding,
+    Profile,
 }

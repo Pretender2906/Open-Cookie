@@ -15,10 +15,14 @@ class InstructionBuilder @Inject constructor() {
         if (action is ResolvedAction.InitializeUser) {
             return listOf(buildInitializeUser(wallet))
         }
+        if (action is ResolvedAction.CloseUser) {
+            return listOf(buildCloseUser(wallet))
+        }
 
         val main = when (action) {
             ResolvedAction.BreakCookie -> buildBreakCookie(wallet)
             ResolvedAction.InitializeUser -> error("handled above")
+            ResolvedAction.CloseUser -> error("handled above")
         }
 
         return if (prependInitializeUser) {
@@ -59,6 +63,22 @@ class InstructionBuilder @Inject constructor() {
                 AccountMeta(userProfilePda, isSigner = false, isWritable = true),
                 AccountMeta(treasuryVaultPda, isSigner = false, isWritable = true),
                 AccountMeta(PublicKey.SYSTEM_PROGRAM, isSigner = false, isWritable = false),
+            ),
+            data = discriminator,
+        )
+    }
+
+    fun buildCloseUser(wallet: PublicKey): TransactionInstruction {
+        val discriminator = AnchorDiscriminator.forInstruction("close_user")
+        val (configPda) = ProgramAddresses.config()
+        val (userProfilePda) = ProgramAddresses.userProfile(wallet)
+
+        return TransactionInstruction(
+            programId = ProgramAddresses.PROGRAM_ID,
+            keys = listOf(
+                AccountMeta(wallet, isSigner = true, isWritable = true),
+                AccountMeta(configPda, isSigner = false, isWritable = false),
+                AccountMeta(userProfilePda, isSigner = false, isWritable = true),
             ),
             data = discriminator,
         )

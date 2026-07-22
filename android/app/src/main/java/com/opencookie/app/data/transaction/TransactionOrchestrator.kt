@@ -25,6 +25,7 @@ import javax.inject.Singleton
 sealed interface Action {
     data object BreakCookie : Action
     data object InitializeUser : Action
+    data object CloseUser : Action
 }
 
 data class BreakCookieTxResult(
@@ -70,8 +71,13 @@ class TransactionOrchestrator @Inject constructor(
                 val resolvedAction = when (action) {
                     Action.BreakCookie -> ResolvedAction.BreakCookie
                     Action.InitializeUser -> ResolvedAction.InitializeUser
+                    Action.CloseUser -> ResolvedAction.CloseUser
                 }
-                val hadProfile = session.hasProfile
+                val hadProfile = hadProfileForAction(session, action)
+                if (action is Action.CloseUser && !hadProfile) {
+                    emit(TransactionState.Failed(AppError.ProfileNotFound))
+                    return@flow
+                }
 
                 emit(TransactionState.AwaitingSignature)
                 val signResult = signAndSend(resolvedAction, wallet, config, hadProfile) { state ->
@@ -99,7 +105,11 @@ class TransactionOrchestrator @Inject constructor(
                 when (val confirm = confirmWithBackoff(sent)) {
                     ConfirmOutcome.Confirmed -> {
                         appSession.removePendingTransaction(sent.signature)
-                        profileRepository.fetchProfile(wallet)
+                        if (action is Action.CloseUser) {
+                            onUserClosedAfterTx()
+                        } else {
+                            profileRepository.fetchProfile(wallet)
+                        }
                         emit(TransactionState.Confirmed(sent.signature))
                     }
                     ConfirmOutcome.Expired -> {
@@ -211,7 +221,8 @@ class TransactionOrchestrator @Inject constructor(
             return Result.failure((e as? AppError) ?: AppError.Unknown(e))
         }
         walletManager.syncWalletBlockchain()
-        val prependInitializeUser = !hadProfile && resolvedAction is ResolvedAction.BreakCookie
+        val prependInitializeUser = !hadProfile &&
+            resolvedAction is ResolvedAction.BreakCookie
         val isHeavy = computeBudgetPolicy.isHeavyTransaction(resolvedAction, prependInitializeUser)
         val instructions = instructionBuilder.buildInstructions(
             resolvedAction, wallet, prependInitializeUser,
@@ -228,10 +239,29 @@ class TransactionOrchestrator @Inject constructor(
         return Result.success(txBytes)
     }
 
+    private fun hadProfileForAction(
+        session: AppSession.SessionState,
+        action: Action,
+    ): Boolean = when (action) {
+        Action.CloseUser -> session.profile != null
+        else -> session.hasProfile
+    }
+
+    private suspend fun onUserClosedAfterTx() {
+        blockhashCache.invalidate()
+        appSession.clearProfile()
+        appSession.pruneStalePendingTransactions()
+        val wallet = appSession.state.value.walletAddress ?: return
+        profileRepository.fetchBalance(wallet)
+    }
+
     private suspend fun applyRecoveredConfirmationSideEffects(tx: PendingTransaction) {
-        if (!tx.hadProfile) {
-            val wallet = appSession.state.value.walletAddress ?: return
-            profileRepository.fetchProfile(wallet)
+        when (tx.action) {
+            "close_user" -> onUserClosedAfterTx()
+            else -> if (!tx.hadProfile) {
+                val wallet = appSession.state.value.walletAddress ?: return
+                profileRepository.fetchProfile(wallet)
+            }
         }
     }
 
@@ -335,6 +365,7 @@ class TransactionOrchestrator @Inject constructor(
     private fun actionToName(action: Action): String = when (action) {
         Action.BreakCookie -> "break_cookie"
         Action.InitializeUser -> "initialize_user"
+        Action.CloseUser -> "close_user"
     }
 
     companion object {

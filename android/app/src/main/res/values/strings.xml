@@ -2,6 +2,10 @@
 <resources>
     <string name="app_name">Open Cookie</string>
     <string name="cookie_title">OPEN COOKIE</string>
+    <string name="tap_the_cookie">Tap the cookie</string>
+    <string name="cookie_cost">%1$s SOL</string>
+    <string name="open_another">Open another</string>
+    <string name="cookie_stats_line">Opened today %1$d/%2$d · %3$d total</string>
     <string name="break_cookie">Break Cookie</string>
     <string name="stats_today">Today %1$d/%2$d</string>
     <string name="stats_today_label">Today</string>
@@ -21,5 +25,26 @@
     <string name="offline_banner">Connection lost</string>
     <string name="retry">Try again</string>
     <string name="dismiss_message">Dismiss</string>
+    <string name="profile_title">Profile</string>
+    <string name="disconnect_wallet">Log out</string>
+    <string name="profile_close">Close profile</string>
+    <string name="profile_close_confirm_title">Close on-chain profile?</string>
+    <string name="profile_close_confirm_message">Your profile account will be closed and rent returned to your wallet. You can create a new profile with your next cookie break.</string>
+    <string name="profile_close_confirm">Close profile</string>
+    <string name="profile_close_cancel">Keep profile</string>
+    <string name="profile_close_wait_sync">Wait for sync before closing your profile</string>
+    <string name="profile_balance_loading">…</string>
+    <string name="profile_cookie_stats">Cookie stats</string>
+    <string name="profile_stat_total">Total breaks</string>
+    <string name="profile_stat_today">Today</string>
+    <string name="profile_stat_price">Break price</string>
+    <string name="network_release">Network: %1$s</string>
+    <string name="network_fee_priority_title">Network fee</string>
+    <string name="network_fee_priority_standard">Standard</string>
+    <string name="network_fee_priority_fast">Fast</string>
+    <string name="network_fee_priority_standard_desc">Wallet default</string>
+    <string name="network_fee_priority_fast_desc">Higher priority fee</string>
+    <string name="transaction_in_progress_compact">Transaction in progress…</string>
+    <string name="tx_status_close_profile">Closing profile…</string>
     <string name="asset_statements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://open-cookie.pages.dev\" } }]</string>
 </resources>

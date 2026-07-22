@@ -23,4 +23,5 @@ data class AccountMeta(
 sealed interface ResolvedAction {
     data object BreakCookie : ResolvedAction
     data object InitializeUser : ResolvedAction
+    data object CloseUser : ResolvedAction
 }

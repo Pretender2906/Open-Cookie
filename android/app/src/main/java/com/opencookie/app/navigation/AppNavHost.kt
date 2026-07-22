@@ -12,6 +12,7 @@ import com.opencookie.app.data.AppReadiness
 import com.opencookie.app.data.session.AppSession
 import com.opencookie.app.ui.screens.cookie.CookieScreen
 import com.opencookie.app.ui.screens.onboarding.ConnectWalletScreen
+import com.opencookie.app.ui.screens.profile.ProfileScreen
 
 @Composable
 fun AppNavHost(
@@ -36,7 +37,19 @@ fun AppNavHost(
             )
         }
         composable(Screen.Home.route) {
-            CookieScreen()
+            CookieScreen(
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+            )
+        }
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onDisconnected = {
+                    navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 

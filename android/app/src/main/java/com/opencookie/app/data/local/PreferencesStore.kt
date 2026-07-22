@@ -2,9 +2,12 @@ package com.opencookie.app.data.local
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.opencookie.app.domain.model.Cluster
+import com.opencookie.app.domain.model.NetworkFeePriority
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -25,6 +28,12 @@ class PreferencesStore @Inject constructor(
 
     suspend fun getAuthToken(): String? =
         dataStore.data.map { it[KEY_AUTH_TOKEN] }.first()
+
+    suspend fun saveWalletAuthCluster(cluster: String) =
+        dataStore.edit { it[KEY_WALLET_AUTH_CLUSTER] = cluster }
+
+    suspend fun getWalletAuthCluster(): String? =
+        dataStore.data.map { it[KEY_WALLET_AUTH_CLUSTER] }.first()
 
     suspend fun saveCluster(cluster: String) =
         dataStore.edit { it[KEY_CLUSTER] = cluster }
@@ -50,10 +59,35 @@ class PreferencesStore @Inject constructor(
     suspend fun getLastGoodRpcEndpoint(cluster: Cluster): String? =
         dataStore.data.map { it[lastGoodRpcKey(cluster)] }.first()
 
+    fun networkFeePriorityFlow(): Flow<NetworkFeePriority> =
+        dataStore.data.map { prefs ->
+            NetworkFeePriority.fromStored(prefs[KEY_NETWORK_FEE_PRIORITY])
+        }
+
+    suspend fun saveNetworkFeePriority(priority: NetworkFeePriority) =
+        dataStore.edit { it[KEY_NETWORK_FEE_PRIORITY] = priority.toStoredValue() }
+
+    suspend fun getNetworkFeePriority(): NetworkFeePriority =
+        networkFeePriorityFlow().first()
+
+    fun cookieTapHintSeenFlow(): Flow<Boolean> =
+        dataStore.data.map { it[KEY_COOKIE_TAP_HINT_SEEN] ?: false }
+
+    suspend fun setCookieTapHintSeen() =
+        dataStore.edit { it[KEY_COOKIE_TAP_HINT_SEEN] = true }
+
+    suspend fun clearWalletAuth() {
+        dataStore.edit {
+            it.remove(KEY_AUTH_TOKEN)
+            it.remove(KEY_WALLET_AUTH_CLUSTER)
+        }
+    }
+
     suspend fun clearUserData() {
         dataStore.edit {
             it.remove(KEY_WALLET_ADDRESS)
             it.remove(KEY_AUTH_TOKEN)
+            it.remove(KEY_WALLET_AUTH_CLUSTER)
             it.remove(KEY_WALLET_URI_BASE)
             it.remove(KEY_PENDING_TXS)
         }
@@ -62,11 +96,14 @@ class PreferencesStore @Inject constructor(
     companion object {
         private val KEY_WALLET_ADDRESS = stringPreferencesKey("wallet_address")
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
+        private val KEY_WALLET_AUTH_CLUSTER = stringPreferencesKey("wallet_auth_cluster")
         private val KEY_WALLET_URI_BASE = stringPreferencesKey("wallet_uri_base")
         private val KEY_CLUSTER = stringPreferencesKey("cluster")
         private val KEY_PENDING_TXS = stringPreferencesKey("pending_txs")
+        private val KEY_NETWORK_FEE_PRIORITY = stringPreferencesKey("network_fee_priority")
         private val KEY_LAST_GOOD_RPC_DEVNET = stringPreferencesKey("last_good_rpc_devnet")
         private val KEY_LAST_GOOD_RPC_MAINNET = stringPreferencesKey("last_good_rpc_mainnet")
+        private val KEY_COOKIE_TAP_HINT_SEEN = booleanPreferencesKey("cookie_tap_hint_seen")
 
         private fun lastGoodRpcKey(cluster: Cluster) = when (cluster) {
             Cluster.Devnet -> KEY_LAST_GOOD_RPC_DEVNET

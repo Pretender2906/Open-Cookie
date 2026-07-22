@@ -1,10 +1,13 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="url(#paint0_radial)"/>
-  <path d="M256 132 L286 222 L382 232 L310 296 L332 392 L256 340 L180 392 L202 296 L130 232 L226 222 Z" fill="white"/>
   <defs>
-    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(256)">
-      <stop offset="0" stop-color="#FFB347"/>
-      <stop offset="1" stop-color="#FF8C00"/>
+    <radialGradient id="bg" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#E4B876"/>
+      <stop offset="55%" stop-color="#1E1512"/>
+      <stop offset="100%" stop-color="#080605"/>
     </radialGradient>
   </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <ellipse cx="256" cy="292" rx="150" ry="118" fill="#C79155"/>
+  <path d="M166 286 C188 220, 324 220, 346 286 C332 334, 180 334, 166 286 Z" fill="#E4B876"/>
+  <path d="M210 250 C236 214, 276 214, 302 250" stroke="#8A6236" stroke-width="10" stroke-linecap="round"/>
 </svg>

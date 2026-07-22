@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.opencookie.app.data.AppReadiness
 import com.opencookie.app.data.DataRefreshCoordinator
 import com.opencookie.app.data.CookieRepository
+import com.opencookie.app.data.local.PreferencesStore
 import com.opencookie.app.data.session.AppSession
 import com.opencookie.app.data.transaction.Action
 import com.opencookie.app.data.transaction.GlobalTransactionUi
@@ -36,6 +37,8 @@ data class CookieUiState(
     val isOffline: Boolean = false,
     val error: String? = null,
     val buttonEnabled: Boolean = false,
+    val showTapHint: Boolean = false,
+    val costSol: String? = null,
 )
 
 @HiltViewModel
@@ -48,6 +51,7 @@ class CookieViewModel @Inject constructor(
     private val dataRefreshCoordinator: DataRefreshCoordinator,
     private val activityResultSenderRegistry: ActivityResultSenderRegistry,
     private val appReadiness: AppReadiness,
+    private val preferencesStore: PreferencesStore,
 ) : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
@@ -58,7 +62,8 @@ class CookieViewModel @Inject constructor(
         globalTransactionUi.state,
         _error,
         _cookieMessage,
-    ) { session, globalTx, error, cookieMessage ->
+        preferencesStore.cookieTapHintSeenFlow(),
+    ) { session, globalTx, error, cookieMessage, tapHintSeen ->
         val profile = session.profile
         CookieUiState(
             callsToday = profile?.callsToday ?: 0,
@@ -75,6 +80,8 @@ class CookieViewModel @Inject constructor(
                 !transactionRunner.isActive &&
                 activityResultSenderRegistry.current() != null &&
                 (profile == null || profile.callsToday < (session.config?.maxCallsPerDay ?: 0)),
+            showTapHint = !tapHintSeen,
+            costSol = session.config?.priceLamports?.let { formatSol(it) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CookieUiState())
 
@@ -113,5 +120,19 @@ class CookieViewModel @Inject constructor(
 
     fun dismissMessage() {
         _cookieMessage.value = null
+    }
+
+    fun markTapHintSeen() {
+        viewModelScope.launch { preferencesStore.setCookieTapHintSeen() }
+    }
+
+    private companion object {
+        fun formatSol(lamports: Long): String {
+            if (lamports <= 0L) return "0"
+            val sol = lamports.toDouble() / 1_000_000_000.0
+            return String.format(java.util.Locale.US, "%.9f", sol)
+                .trimEnd('0')
+                .trimEnd('.')
+        }
     }
 }

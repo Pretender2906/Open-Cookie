@@ -23,10 +23,15 @@ internal object WalletFailureDiagnostics {
         6003 to "InvalidPda",
     )
 
-    fun logSignAndSendAttempt(txBytes: ByteArray, feePayerBase58: String) {
+    fun logSignAndSendAttempt(
+        txBytes: ByteArray,
+        feePayerBase58: String,
+        mwaChain: String,
+        rpcEndpoint: String,
+    ) {
         Log.d(
             TAG,
-            "signTransaction request | feePayer=$feePayerBase58 | txBytes=${txBytes.size}",
+            "signTransaction request | chain=$mwaChain | rpc=$rpcEndpoint | feePayer=$feePayerBase58 | txBytes=${txBytes.size}",
         )
     }
 
