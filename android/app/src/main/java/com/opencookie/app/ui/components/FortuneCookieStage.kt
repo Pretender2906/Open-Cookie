@@ -23,103 +23,222 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.withTransform
 import com.opencookie.app.R
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.sin
 
-enum class CookiePhase { IDLE, BREAKING, REVEALING, REVEALED }
+enum class CookiePhase { IDLE, BREAKING, WAITING_FOR_TRANSACTION, REVEALED }
 
-/**
- * The interactive Fortune Cookie built from the real 3D cookie assets.
- *
- *  - IDLE: the intact cookie breathes, floats and drifts, lifted by a soft amber glow.
- *  - BREAKING → REVEALED: the intact cookie is swapped for its two matching halves (which
- *    overlap into the same silhouette at zero separation, so there is no crossfade), then
- *    they compress, shake, tilt and slide apart while a warm light escapes from inside.
- *
- * The fortune [paper] is slotted into the center lane between the halves, while the
- * halves themselves stay in front only at the outer edges. The whole stage is the tap
- * target — there is no button.
- */
+private const val CrackMomentMs = 720
+private const val HalfTakeoverOffsetX = 0.01f
+private const val RevealedFinalHalfOffsetX = 0.172f
+private const val RevealedOpenY = 0.048f
+private const val RevealedHalfRotation = 8.4f
+
 @Composable
 fun FortuneCookieStage(
     phase: CookiePhase,
     tappable: Boolean,
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
-    paper: @Composable () -> Unit = {},
+    paper: @Composable (Modifier) -> Unit = {},
 ) {
-    val breakTarget = when (phase) {
-        CookiePhase.IDLE -> 0f
-        CookiePhase.BREAKING -> 0.4f
-        CookiePhase.REVEALING, CookiePhase.REVEALED -> 1f
-    }
-    val breakProgress by animateFloatAsState(
-        targetValue = breakTarget,
-        animationSpec = tween(
-            durationMillis = if (phase == CookiePhase.BREAKING) 520 else 780,
-            easing = FastOutSlowInEasing,
-        ),
-        label = "break_progress",
-    )
-
     val idle = rememberInfiniteTransition(label = "cookie_idle")
     val idleScale by idle.animateFloat(
-        initialValue = 0.99f, targetValue = 1.025f,
+        initialValue = 0.985f,
+        targetValue = 1.02f,
         animationSpec = infiniteRepeatable(tween(3400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "idle_scale",
     )
     val idleRotation by idle.animateFloat(
-        initialValue = -1.8f, targetValue = 1.8f,
+        initialValue = -1.5f,
+        targetValue = 1.5f,
         animationSpec = infiniteRepeatable(tween(4600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "idle_rotation",
     )
     val idleFloat by idle.animateFloat(
-        initialValue = -7f, targetValue = 7f,
+        initialValue = -6f,
+        targetValue = 6f,
         animationSpec = infiniteRepeatable(tween(3800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "idle_float",
     )
-    val particleTime by idle.animateFloat(
-        initialValue = 0f, targetValue = 1f,
+    val ambientTime by idle.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(11000, easing = LinearEasing), RepeatMode.Restart),
-        label = "particle_time",
+        label = "ambient_time",
     )
     val glowPulse by idle.animateFloat(
-        initialValue = 0.85f, targetValue = 1.12f,
+        initialValue = 0.88f,
+        targetValue = 1.1f,
         animationSpec = infiniteRepeatable(tween(4200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "glow_pulse",
     )
+    val brokenMotion = rememberInfiniteTransition(label = "cookie_broken_motion")
+    val settleBob by brokenMotion.animateFloat(
+        initialValue = -2f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "settle_bob",
+    )
+    val settleTilt by brokenMotion.animateFloat(
+        initialValue = -0.65f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(tween(1900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "settle_tilt",
+    )
+    val paperDrift by brokenMotion.animateFloat(
+        initialValue = -1.5f,
+        targetValue = 1.5f,
+        animationSpec = infiniteRepeatable(tween(2800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "paper_drift",
+    )
 
-    val shake = remember { Animatable(0f) }
+    val initialBreakProgress = remember { Animatable(0f) }
+    val burstProgress = remember { Animatable(0f) }
+    val fallProgress = remember { Animatable(0f) }
+    val particleProgress = remember { Animatable(0f) }
+    val impactShake = remember { Animatable(0f) }
+
     LaunchedEffect(phase) {
-        if (phase == CookiePhase.BREAKING) {
-            shake.snapTo(0f)
-            shake.animateTo(
-                targetValue = 0f,
-                animationSpec = keyframes {
-                    durationMillis = 440
-                    0f at 0
-                    1f at 55
-                    -0.8f at 125
-                    0.55f at 205
-                    -0.3f at 300
-                    0f at 440
-                },
-            )
-        } else {
-            shake.snapTo(0f)
+        when (phase) {
+            CookiePhase.IDLE -> {
+                initialBreakProgress.snapTo(0f)
+                burstProgress.snapTo(0f)
+                fallProgress.snapTo(0f)
+                particleProgress.snapTo(0f)
+                impactShake.snapTo(0f)
+            }
+            CookiePhase.BREAKING -> {
+                initialBreakProgress.snapTo(0f)
+                burstProgress.snapTo(0f)
+                fallProgress.snapTo(0f)
+                particleProgress.snapTo(0f)
+                impactShake.snapTo(0f)
+
+                coroutineScope {
+                    launch {
+                        impactShake.animateTo(
+                            targetValue = 0f,
+                            animationSpec = keyframes {
+                                durationMillis = 880
+                                0f at 0
+                                0.1f at 70
+                                -0.08f at 180
+                                0.14f at 310
+                                -0.12f at 450
+                                0.18f at 580
+                                -0.14f at 660
+                                0.72f at CrackMomentMs
+                                -0.18f at 800
+                                0f at 880
+                            },
+                        )
+                    }
+                    launch {
+                        initialBreakProgress.animateTo(
+                            targetValue = 1f,
+                            animationSpec = keyframes {
+                                durationMillis = 1180
+                                0f at 0
+                                0.06f at 80
+                                0.14f at 220
+                                0.2f at 380
+                                0.26f at 540
+                                0.34f at 660
+                                0.36f at CrackMomentMs
+                                0.58f at 830
+                                0.76f at 960
+                                1f at 1180
+                            },
+                        )
+                    }
+                    launch {
+                        delay(CrackMomentMs.toLong())
+                        burstProgress.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(520, easing = FastOutSlowInEasing),
+                        )
+                    }
+                    launch {
+                        delay((CrackMomentMs + 70).toLong())
+                        fallProgress.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(1140, easing = LinearEasing),
+                        )
+                    }
+                    launch {
+                        delay((CrackMomentMs + 20).toLong())
+                        particleProgress.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(900, easing = LinearEasing),
+                        )
+                    }
+                }
+            }
+            CookiePhase.WAITING_FOR_TRANSACTION,
+            CookiePhase.REVEALED,
+            -> {
+                if (initialBreakProgress.value < 1f) initialBreakProgress.snapTo(1f)
+                if (burstProgress.value < 1f) burstProgress.snapTo(1f)
+                if (fallProgress.value < 1f) fallProgress.snapTo(1f)
+                if (particleProgress.value < 1f) particleProgress.snapTo(1f)
+                impactShake.snapTo(0f)
+            }
         }
     }
 
-    val isIdle = phase == CookiePhase.IDLE
-    val showHalves = phase != CookiePhase.IDLE
+    val revealedOpenProgress by animateFloatAsState(
+        targetValue = if (phase == CookiePhase.REVEALED) 1f else 0f,
+        animationSpec = tween(760, easing = FastOutSlowInEasing),
+        label = "revealed_open_progress",
+    )
+
+    val initialBreakCurve = initialBreakProgress.value.coerceIn(0f, 1f)
+    val pressCurve = when {
+        phase != CookiePhase.BREAKING -> 0f
+        initialBreakCurve < 0.18f -> easeOutCubic(initialBreakCurve / 0.18f)
+        initialBreakCurve < 0.34f -> 1f - easeOutCubic((initialBreakCurve - 0.18f) / 0.16f)
+        else -> 0f
+    }
+    val intactAlpha = when {
+        phase == CookiePhase.IDLE -> 1f
+        phase == CookiePhase.BREAKING -> (1f - ((initialBreakCurve - 0.34f) / 0.14f)).coerceIn(0f, 1f)
+        else -> 0f
+    }
+    val brokenClosedAlpha = when (phase) {
+        CookiePhase.IDLE -> 0f
+        CookiePhase.BREAKING -> ((initialBreakCurve - 0.36f) / 0.16f).coerceIn(0f, 1f)
+        CookiePhase.WAITING_FOR_TRANSACTION -> 1f
+        CookiePhase.REVEALED -> (1f - revealedOpenProgress / 0.24f).coerceIn(0f, 1f)
+    }
+    val separatedHalvesAlpha = if (phase == CookiePhase.REVEALED) {
+        ((revealedOpenProgress - 0.02f) / 0.16f).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val burstCurve = burstProgress.value.coerceIn(0f, 1f)
+    val fallCurve = fallProgress.value.coerceIn(0f, 1f)
+    val particleCurve = particleProgress.value.coerceIn(0f, 1f)
+    val broken = phase != CookiePhase.IDLE
+    val paperPresence = if (phase == CookiePhase.REVEALED) {
+        ((revealedOpenProgress - 0.08f) / 0.24f).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val calmMotion = when (phase) {
+        CookiePhase.BREAKING -> 0f
+        CookiePhase.WAITING_FOR_TRANSACTION -> 0.5f
+        CookiePhase.REVEALED -> 0.28f
+        CookiePhase.IDLE -> 0f
+    }
 
     Box(
         modifier = modifier.clickable(
@@ -130,57 +249,32 @@ fun FortuneCookieStage(
         ),
         contentAlignment = Alignment.Center,
     ) {
-        // Ambient glowing dust.
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawAmbientParticles(particleTime, glow = if (isIdle) 1f else 0.5f)
-        }
-
-        // Soft floating glow beneath the cookie + warm light escaping while it opens.
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val base = size.minDimension
-            val underR = base * 0.42f * (if (isIdle) glowPulse else 1f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x4DE9A24E), Color(0x00E9A24E)),
-                    center = Offset(cx, cy + base * 0.26f),
-                    radius = underR,
-                ),
-                radius = underR,
-                center = Offset(cx, cy + base * 0.26f),
+            drawAmbientParticles(ambientTime, glow = if (phase == CookiePhase.IDLE) 1f else 0.45f)
+            drawStageGlow(
+                idleGlow = glowPulse,
+                breakCurve = initialBreakCurve,
+                revealedFocus = revealedOpenProgress,
             )
-            if (breakProgress > 0.05f) {
-                val innerR = base * 0.34f
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFFFFF1CE).copy(alpha = 0.9f * breakProgress),
-                            Color(0x00FFF1CE),
-                        ),
-                        center = Offset(cx, cy),
-                        radius = innerR,
-                    ),
-                    radius = innerR,
-                    center = Offset(cx, cy),
-                )
-            }
         }
 
-        if (showHalves) {
-            Box(
-                modifier = Modifier
+        if (broken && paperPresence > 0.01f) {
+            paper(
+                Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        translationY = (size.height * 0.018f) + (1f - breakProgress) * 18f * density
+                        alpha = paperPresence
+                        translationY =
+                            size.height * (0.115f - 0.255f * revealedOpenProgress) +
+                                paperDrift * density * 0.18f * calmMotion
+                        val paperScale = lerp(0.74f, 1.02f, revealedOpenProgress)
+                        scaleX = paperScale
+                        scaleY = paperScale
                     },
-                contentAlignment = Alignment.Center,
-            ) {
-                paper()
-            }
+            )
         }
 
-        if (!showHalves) {
+        if (phase == CookiePhase.IDLE || intactAlpha > 0.01f) {
             Image(
                 painter = painterResource(R.drawable.intact_cookie),
                 contentDescription = null,
@@ -188,14 +282,23 @@ fun FortuneCookieStage(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        scaleX = idleScale
-                        scaleY = idleScale
-                        rotationZ = idleRotation
-                        translationY = idleFloat * density
+                        val pressScaleX = 1f + 0.012f * pressCurve
+                        val pressScaleY = 1f - 0.035f * pressCurve
+                        alpha = intactAlpha
+                        scaleX = idleScale * pressScaleX
+                        scaleY = idleScale * pressScaleY
+                        rotationZ = idleRotation + impactShake.value * 1.05f
+                        translationX = impactShake.value * 2.2f * density
+                        translationY = idleFloat * density + pressCurve * 3.5f * density
                     },
             )
-        } else {
-            val squash = 1f - 0.06f * (1f - (breakProgress / 0.2f).coerceIn(0f, 1f))
+        }
+
+        if (broken && separatedHalvesAlpha > 0.01f) {
+            val openAmount = easeInOutCubic(revealedOpenProgress)
+            val halfOffsetX = lerp(HalfTakeoverOffsetX, RevealedFinalHalfOffsetX, openAmount)
+            val separationY = RevealedOpenY * openAmount
+            val halfRotation = RevealedHalfRotation * openAmount
             Image(
                 painter = painterResource(R.drawable.cookie_left_half),
                 contentDescription = null,
@@ -203,13 +306,16 @@ fun FortuneCookieStage(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        translationX = (-breakProgress * size.width * 0.245f) + shake.value * 10f * density
-                        translationY = breakProgress * size.height * 0.028f
-                        rotationZ = -breakProgress * 9f
-                        scaleX = squash
-                        scaleY = squash
+                        alpha = separatedHalvesAlpha
+                        translationX =
+                            size.width * -halfOffsetX +
+                                impactShake.value * 4f * density +
+                                settleTilt * density * 1.5f * calmMotion
+                        translationY = size.height * separationY + settleBob * density * 0.18f * calmMotion
+                        rotationZ = -halfRotation + settleTilt * 0.8f * calmMotion
                     },
             )
+
             Image(
                 painter = painterResource(R.drawable.cookie_right_half),
                 contentDescription = null,
@@ -217,110 +323,128 @@ fun FortuneCookieStage(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        translationX = (breakProgress * size.width * 0.245f) + shake.value * 10f * density
-                        translationY = breakProgress * size.height * 0.028f
-                        rotationZ = breakProgress * 9f
-                        scaleX = squash
-                        scaleY = squash
+                        alpha = separatedHalvesAlpha
+                        translationX =
+                            size.width * halfOffsetX +
+                                impactShake.value * 4f * density -
+                                settleTilt * density * 1.5f * calmMotion
+                        translationY = size.height * separationY - settleBob * density * 0.18f * calmMotion
+                        rotationZ = halfRotation - settleTilt * 0.8f * calmMotion
                     },
             )
         }
 
-        if (showHalves) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawBreakCrumbs(breakProgress)
-            }
-        }
-
-    }
-}
-
-private val Crumbs = listOf(
-    // dirX, dirY, sizeRel, gravity, rotation
-    floatArrayOf(-0.56f, 0.24f, 0.028f, 0.72f, -0.7f),
-    floatArrayOf(-0.42f, 0.36f, 0.022f, 0.92f, 0.45f),
-    floatArrayOf(-0.26f, 0.46f, 0.018f, 1.06f, 1.1f),
-    floatArrayOf(-0.08f, 0.50f, 0.014f, 0.88f, -0.2f),
-    floatArrayOf(0.1f, 0.48f, 0.021f, 1.02f, -0.36f),
-    floatArrayOf(0.28f, 0.42f, 0.017f, 0.82f, 0.86f),
-    floatArrayOf(0.46f, 0.32f, 0.024f, 0.78f, -1.18f),
-    floatArrayOf(0.6f, 0.22f, 0.029f, 0.88f, -0.92f),
-    floatArrayOf(-0.18f, 0.58f, 0.013f, 1.16f, 1.6f),
-    floatArrayOf(0.0f, 0.60f, 0.032f, 1.24f, 0.35f),
-    floatArrayOf(0.2f, 0.56f, 0.015f, 1.0f, 2.1f),
-)
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBreakCrumbs(progress: Float) {
-    if (progress <= 0.02f) return
-    val cx = size.width / 2f
-    val cy = size.height / 2f
-    val r = size.minDimension * 0.31f
-    val appear = ((progress - 0.05f) / 0.2f).coerceIn(0f, 1f)
-    val settle = progress.coerceIn(0f, 1f)
-    Crumbs.forEachIndexed { i, c ->
-        val dirX = c[0]
-        val dirY = c[1]
-        val crumbSize = r * c[2]
-        val gravity = c[3]
-        val rotation = c[4] + settle * (0.6f + i * 0.08f)
-        val x = cx + dirX * r * (0.22f + 1.15f * settle)
-        val y = cy + dirY * r * 0.38f + gravity * settle * settle * r * 0.76f - (1f - settle) * r * 0.05f
-        val warm = when (i % 3) {
-            0 -> Color(0xFFE4A45A)
-            1 -> Color(0xFFC9853C)
-            else -> Color(0xFFF0C88A)
-        }
-        drawCrumb(
-            center = Offset(x, y),
-            radius = crumbSize,
-            rotation = rotation,
-            color = warm.copy(alpha = 0.9f * appear),
-            seed = i,
-        )
-    }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCrumb(
-    center: Offset,
-    radius: Float,
-    rotation: Float,
-    color: Color,
-    seed: Int,
-) {
-    withTransform({
-        rotate(degrees = rotation * 57.2958f, pivot = center)
-    }) {
-        drawOval(
-            color = color,
-            topLeft = Offset(center.x - radius * 0.82f, center.y - radius * 0.52f),
-            size = Size(radius * 1.68f, radius * 1.04f),
-        )
-        drawOval(
-            color = color.copy(alpha = color.alpha * 0.96f),
-            topLeft = Offset(center.x - radius * 0.46f, center.y - radius * 0.64f),
-            size = Size(radius * 0.96f, radius * 0.92f),
-        )
-        drawOval(
-            color = color.copy(alpha = color.alpha * 0.92f),
-            topLeft = Offset(center.x + radius * 0.04f, center.y - radius * 0.38f),
-            size = Size(radius * 0.78f, radius * 0.72f),
-        )
-        if (seed % 2 == 0) {
-            drawOval(
-                color = color.copy(alpha = color.alpha * 0.88f),
-                topLeft = Offset(center.x - radius * 0.12f, center.y + radius * 0.02f),
-                size = Size(radius * 0.62f, radius * 0.48f),
+        if (broken && brokenClosedAlpha > 0.01f) {
+            Image(
+                painter = painterResource(R.drawable.cookie_broken_closed),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        val pressScaleX = 1f + 0.012f * pressCurve
+                        val pressScaleY = 1f - 0.035f * pressCurve
+                        val closedSettle = easeOutCubic(((initialBreakCurve - 0.42f) / 0.58f).coerceIn(0f, 1f))
+                        val bridgeScale = if (phase == CookiePhase.BREAKING) lerp(idleScale, 1f, closedSettle) else 1f
+                        val bridgeRotation = if (phase == CookiePhase.BREAKING) lerp(idleRotation, 0f, closedSettle) else 0f
+                        val bridgeFloat = if (phase == CookiePhase.BREAKING) lerp(idleFloat, 0f, closedSettle) else 0f
+                        alpha = brokenClosedAlpha
+                        scaleX = bridgeScale * pressScaleX
+                        scaleY = bridgeScale * pressScaleY
+                        rotationZ = bridgeRotation + impactShake.value * 1.05f + settleTilt * 0.28f * calmMotion
+                        translationX = impactShake.value * 2.2f * density
+                        translationY =
+                            bridgeFloat * density +
+                                pressCurve * 3.5f * density +
+                                settleBob * density * 0.12f * calmMotion
+                    },
             )
         }
-        drawOval(
-            color = Color(0xFFFFD89E).copy(alpha = color.alpha * 0.34f),
-            topLeft = Offset(center.x - radius * 0.34f, center.y - radius * 0.28f),
-            size = Size(radius * 0.64f, radius * 0.24f),
-        )
-        drawOval(
-            color = Color(0xFF8D541F).copy(alpha = color.alpha * 0.18f),
-            topLeft = Offset(center.x - radius * 0.18f, center.y + radius * 0.12f),
-            size = Size(radius * 0.7f, radius * 0.18f),
+
+        if (broken) {
+            val burstAppear = ((burstCurve - 0.08f) / 0.18f).coerceIn(0f, 1f)
+            val burstFade = ((burstCurve - 0.56f) / 0.44f).coerceIn(0f, 1f)
+            val burstAlpha = burstAppear * (1f - burstFade)
+            Image(
+                painter = painterResource(R.drawable.crumb_burst),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = burstAlpha
+                        translationY = size.height * (0.008f + 0.045f * easeOutCubic(burstCurve))
+                        rotationZ = -2.2f + burstCurve * 2.4f
+                    },
+            )
+
+            val fallAppear = ((fallCurve - 0.08f) / 0.18f).coerceIn(0f, 1f)
+            val activeFallFade = ((fallCurve - 0.64f) / 0.24f).coerceIn(0f, 1f)
+            val settledCrumbs = ((fallCurve - 0.72f) / 0.28f).coerceIn(0f, 1f)
+            val fallAlpha = fallAppear * (1f - activeFallFade) + settledCrumbs * 0.42f
+            Image(
+                painter = painterResource(R.drawable.crumb_fall),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = fallAlpha.coerceIn(0f, 1f)
+                        translationY = size.height * (-0.026f + 0.145f * easeInOutCubic(fallCurve))
+                        translationX = size.width * 0.006f * sin(fallCurve * 4.8f)
+                        rotationZ = -1.2f + fallCurve * 3.4f
+                    },
+            )
+
+            val particleAppear = ((particleCurve - 0.02f) / 0.12f).coerceIn(0f, 1f)
+            val particleFade = ((particleCurve - 0.56f) / 0.44f).coerceIn(0f, 1f)
+            Image(
+                painter = painterResource(R.drawable.crumb_particles),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = particleAppear * (1f - particleFade)
+                        translationY = size.height * (-0.018f + 0.08f * easeOutCubic(particleCurve))
+                        translationX = size.width * 0.008f * sin(particleCurve * 6.4f + 0.6f)
+                    },
+            )
+        }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStageGlow(
+    idleGlow: Float,
+    breakCurve: Float,
+    revealedFocus: Float,
+) {
+    val cx = size.width / 2f
+    val cy = size.height / 2f
+    val base = size.minDimension
+    val underRadius = base * (0.34f + 0.07f * idleGlow - 0.05f * revealedFocus)
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(Color(0x44E9A24E), Color(0x00E9A24E)),
+            center = Offset(cx, cy + base * 0.22f),
+            radius = underRadius,
+        ),
+        radius = underRadius,
+        center = Offset(cx, cy + base * 0.22f),
+    )
+
+    if (breakCurve > 0.05f) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color(0xFFFFF3D7).copy(alpha = 0.55f * breakCurve),
+                    Color.Transparent,
+                ),
+                center = Offset(cx, cy),
+                radius = base * 0.2f,
+            ),
+            radius = base * 0.2f,
+            center = Offset(cx, cy),
         )
     }
 }
@@ -330,23 +454,40 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawAmbientParticle
     glow: Float,
 ) {
     val motes = listOf(
-        Triple(0.2f, 0.85f, 0.9f),
-        Triple(0.78f, 0.9f, 1.3f),
-        Triple(0.5f, 0.95f, 0.7f),
-        Triple(0.33f, 0.8f, 1.1f),
-        Triple(0.66f, 0.82f, 0.8f),
-        Triple(0.86f, 0.88f, 1.0f),
+        Triple(0.24f, 0.82f, 0.9f),
+        Triple(0.76f, 0.88f, 1.28f),
+        Triple(0.5f, 0.94f, 0.7f),
+        Triple(0.36f, 0.8f, 1.04f),
+        Triple(0.64f, 0.78f, 0.82f),
     )
-    motes.forEachIndexed { i, (bx, startY, speed) ->
-        val local = (time * speed + i * 0.17f) % 1f
-        val y = size.height * (startY - local * 0.68f)
-        val drift = sin((local + i) * 6.28f) * size.width * 0.018f
-        val x = size.width * bx + drift
+    motes.forEachIndexed { index, (baseX, startY, speed) ->
+        val local = (time * speed + index * 0.17f) % 1f
+        val y = size.height * (startY - local * 0.62f)
+        val x = size.width * baseX + sin((local + index) * 6.28f) * size.width * 0.016f
         val fade = sin(local * 3.14f).coerceIn(0f, 1f)
         drawCircle(
-            color = Color(0xFFE9C07A).copy(alpha = 0.16f * fade * glow),
-            radius = size.minDimension * (0.005f + 0.003f * (i % 3)),
+            color = Color(0xFFE7C17F).copy(alpha = 0.12f * fade * glow),
+            radius = size.minDimension * (0.004f + 0.0026f * (index % 3)),
             center = Offset(x, y),
         )
     }
 }
+
+private fun easeOutCubic(value: Float): Float {
+    val t = value.coerceIn(0f, 1f)
+    val p = 1f - t
+    return 1f - p * p * p
+}
+
+private fun easeInOutCubic(value: Float): Float {
+    val t = value.coerceIn(0f, 1f)
+    return if (t < 0.5f) {
+        4f * t * t * t
+    } else {
+        val p = -2f * t + 2f
+        1f - (p * p * p) / 2f
+    }
+}
+
+private fun lerp(start: Float, stop: Float, fraction: Float): Float =
+    start + (stop - start) * fraction.coerceIn(0f, 1f)

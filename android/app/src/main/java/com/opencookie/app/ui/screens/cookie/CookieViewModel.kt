@@ -32,7 +32,9 @@ data class CookieUiState(
     val totalCalls: Long = 0,
     val cookieMessage: String? = null,
     val transactionState: TransactionState = TransactionState.Idle,
+    val transactionOrigin: TransactionOrigin? = null,
     val isTransactionInProgress: Boolean = false,
+    val isCookieOpeningInProgress: Boolean = false,
     val configLoaded: Boolean = false,
     val isOffline: Boolean = false,
     val error: String? = null,
@@ -56,28 +58,38 @@ class CookieViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     private val _cookieMessage = MutableStateFlow<String?>(null)
+    private val _cookieOpeningPending = MutableStateFlow(false)
+    private val cookieOpeningVisualState = combine(
+        _error,
+        _cookieMessage,
+        _cookieOpeningPending,
+    ) { error, cookieMessage, cookieOpeningPending ->
+        CookieOpeningVisualState(error, cookieMessage, cookieOpeningPending)
+    }
 
     val uiState: StateFlow<CookieUiState> = combine(
         appSession.state,
         globalTransactionUi.state,
-        _error,
-        _cookieMessage,
+        cookieOpeningVisualState,
         preferencesStore.cookieTapHintSeenFlow(),
-    ) { session, globalTx, error, cookieMessage, tapHintSeen ->
+    ) { session, globalTx, visualState, tapHintSeen ->
         val profile = session.profile
         CookieUiState(
             callsToday = profile?.callsToday ?: 0,
             maxCallsPerDay = session.config?.maxCallsPerDay ?: 0,
             totalCalls = profile?.totalCalls ?: 0,
-            cookieMessage = cookieMessage,
+            cookieMessage = visualState.cookieMessage,
             transactionState = globalTx.phase,
+            transactionOrigin = globalTx.origin,
             isTransactionInProgress = session.isTransactionInProgress || transactionRunner.isActive,
+            isCookieOpeningInProgress = visualState.cookieOpeningPending,
             configLoaded = session.config != null,
             isOffline = !session.isOnline,
-            error = error,
+            error = visualState.error,
             buttonEnabled = session.config != null &&
                 !session.isTransactionInProgress &&
                 !transactionRunner.isActive &&
+                !visualState.cookieOpeningPending &&
                 activityResultSenderRegistry.current() != null &&
                 (profile == null || profile.callsToday < (session.config?.maxCallsPerDay ?: 0)),
             showTapHint = !tapHintSeen,
@@ -102,24 +114,36 @@ class CookieViewModel @Inject constructor(
                         val result = transactionOrchestrator.fetchBreakCookieResult(state.signature)
                         result.onSuccess { cookieResult ->
                             _cookieMessage.value = cookieRepository.cookieMessage(cookieResult.messageIndex)
+                            _cookieOpeningPending.value = false
                         }.onFailure {
                             _error.value = (it as? AppError)?.userMessage ?: "Could not read cookie message"
+                            _cookieOpeningPending.value = false
                         }
                     }
                 }
-                is TransactionState.Failed -> _error.value = state.error.userMessage
+                is TransactionState.Failed -> {
+                    _error.value = state.error.userMessage
+                    _cookieOpeningPending.value = false
+                }
                 else -> Unit
             }
         }
-        if (!started) _error.value = AppError.TransactionInProgress.userMessage
+        if (started) {
+            _cookieOpeningPending.value = true
+        } else {
+            _error.value = AppError.TransactionInProgress.userMessage
+            _cookieOpeningPending.value = false
+        }
     }
 
     fun dismissError() {
         _error.value = null
+        _cookieOpeningPending.value = false
     }
 
     fun dismissMessage() {
         _cookieMessage.value = null
+        _cookieOpeningPending.value = false
     }
 
     fun markTapHintSeen() {
@@ -127,6 +151,12 @@ class CookieViewModel @Inject constructor(
     }
 
     private companion object {
+        data class CookieOpeningVisualState(
+            val error: String?,
+            val cookieMessage: String?,
+            val cookieOpeningPending: Boolean,
+        )
+
         fun formatSol(lamports: Long): String {
             if (lamports <= 0L) return "0"
             val sol = lamports.toDouble() / 1_000_000_000.0

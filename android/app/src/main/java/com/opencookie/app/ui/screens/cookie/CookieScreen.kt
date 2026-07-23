@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,10 +30,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opencookie.app.R
+import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.ui.components.CookiePhase
 import com.opencookie.app.ui.components.FortuneCookieStage
@@ -51,6 +56,10 @@ import com.opencookie.app.ui.theme.OpenCookieBackground
 import com.opencookie.app.ui.theme.OpenCookieWordmark
 import kotlinx.coroutines.delay
 
+private const val BreakAnimationMs = 1440L
+private const val CrackHapticDelayMs = 720L
+private const val CrackHapticTailDelayMs = 64L
+
 @Composable
 fun CookieScreen(
     onProfileClick: () -> Unit,
@@ -58,22 +67,45 @@ fun CookieScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var phase by remember { mutableStateOf(CookiePhase.IDLE) }
+    var phase by rememberSaveable { mutableStateOf(CookiePhase.IDLE) }
+    val latestCookieMessage by rememberUpdatedState(uiState.cookieMessage)
+    val latestError by rememberUpdatedState(uiState.error)
+    val hapticFeedback = LocalHapticFeedback.current
 
-    LaunchedEffect(uiState.cookieMessage) {
-        if (uiState.cookieMessage != null && phase == CookiePhase.BREAKING) {
-            phase = CookiePhase.REVEALING
-        }
-    }
-    LaunchedEffect(uiState.error) {
-        if (uiState.error != null && phase == CookiePhase.BREAKING) {
-            phase = CookiePhase.IDLE
+    LaunchedEffect(
+        uiState.cookieMessage,
+        uiState.error,
+        uiState.isCookieOpeningInProgress,
+        uiState.isTransactionInProgress,
+        uiState.transactionOrigin,
+        uiState.transactionState,
+    ) {
+        when {
+            uiState.error != null -> phase = CookiePhase.IDLE
+            uiState.cookieMessage != null && phase != CookiePhase.BREAKING -> phase = CookiePhase.REVEALED
+            uiState.hasActiveCookieTransaction() && phase == CookiePhase.IDLE -> {
+                phase = CookiePhase.WAITING_FOR_TRANSACTION
+            }
         }
     }
     LaunchedEffect(phase) {
-        if (phase == CookiePhase.REVEALING) {
-            delay(840)
-            phase = CookiePhase.REVEALED
+        if (phase == CookiePhase.BREAKING) {
+            delay(CrackHapticDelayMs)
+            if (phase == CookiePhase.BREAKING && latestError == null) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            delay(CrackHapticTailDelayMs)
+            if (phase == CookiePhase.BREAKING && latestError == null) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+            delay(BreakAnimationMs - CrackHapticDelayMs - CrackHapticTailDelayMs)
+            if (phase == CookiePhase.BREAKING && latestError == null) {
+                phase = if (latestCookieMessage != null) {
+                    CookiePhase.REVEALED
+                } else {
+                    CookiePhase.WAITING_FOR_TRANSACTION
+                }
+            }
         }
     }
 
@@ -119,40 +151,38 @@ fun CookieScreen(
                     tappable = tappable,
                     onTap = {
                         if (tappable) {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             viewModel.markTapHintSeen()
                             phase = CookiePhase.BREAKING
                             viewModel.breakCookie()
                         }
                     },
-                    modifier = Modifier.size(520.dp),
-                    paper = {
-                        val message = uiState.cookieMessage
-                        val paperVisible = phase == CookiePhase.REVEALING || phase == CookiePhase.REVEALED
-                        val reveal by animateFloatAsState(
-                            targetValue = if (paperVisible) 1f else 0f,
-                            animationSpec = tween(560, easing = FastOutSlowInEasing),
-                            label = "paper_reveal",
+                    modifier = Modifier
+                        .fillMaxWidth(0.92f)
+                        .aspectRatio(0.9f),
+                    paper = { paperModifier ->
+                        val paperReveal by animateFloatAsState(
+                            targetValue = when (phase) {
+                                CookiePhase.IDLE,
+                                CookiePhase.BREAKING,
+                                CookiePhase.WAITING_FOR_TRANSACTION,
+                                -> 0f
+                                CookiePhase.REVEALED -> 1f
+                            },
+                            animationSpec = tween(760, easing = FastOutSlowInEasing),
+                            label = "paper_physical_reveal",
                         )
-                        // Text only fades in once the paper has settled into place.
                         val textReveal by animateFloatAsState(
-                            targetValue = if (phase == CookiePhase.REVEALED) 1f else 0f,
-                            animationSpec = tween(420, easing = FastOutSlowInEasing),
+                            targetValue = if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null) 1f else 0f,
+                            animationSpec = tween(360, delayMillis = 620, easing = FastOutSlowInEasing),
                             label = "paper_text_reveal",
                         )
-                        if (message != null && reveal > 0.01f) {
-                            FortunePaper(
-                                message = message,
-                                textAlpha = textReveal,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.98f)
-                                    .graphicsLayer {
-                                        alpha = reveal
-                                        scaleX = 0.82f + 0.18f * reveal
-                                        scaleY = 0.82f + 0.18f * reveal
-                                        translationY = ((1f - reveal) * 34f + 6f) * density
-                                    },
-                            )
-                        }
+                        FortunePaper(
+                            message = uiState.cookieMessage,
+                            textAlpha = textReveal,
+                            revealProgress = paperReveal,
+                            modifier = paperModifier,
+                        )
                     },
                 )
 
@@ -160,7 +190,7 @@ fun CookieScreen(
                     TapHintHand(
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .padding(top = 250.dp),
+                            .padding(top = 180.dp),
                     )
                 }
             }
@@ -185,6 +215,19 @@ fun CookieScreen(
         }
     }
 }
+
+private fun CookieUiState.hasActiveCookieTransaction(): Boolean =
+    isCookieOpeningInProgress ||
+        (
+            transactionOrigin == TransactionOrigin.BreakCookie &&
+                (
+                    isTransactionInProgress ||
+                        transactionState == TransactionState.Building ||
+                        transactionState == TransactionState.AwaitingSignature ||
+                        transactionState is TransactionState.Confirming ||
+                        transactionState == TransactionState.Retrying
+                    )
+            )
 
 @Composable
 private fun BottomArea(
