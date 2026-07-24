@@ -21,7 +21,7 @@ val CookieBronze = Color(0xFF8A6236)
 val CookieCream = Color(0xFFF1E6D2)
 val CookieCreamDim = Color(0xFFB9A88C)
 val Parchment = Color(0xFFEFE2C4)
-val PaperInk = Color(0xFF4A3016)
+val PaperInk = Color(0xFF5A4034)
 
 /** Deep warm backgrounds — near-black espresso. */
 val EspressoTop = Color(0xFF1E1512)

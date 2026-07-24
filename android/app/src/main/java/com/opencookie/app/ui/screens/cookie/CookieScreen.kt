@@ -1,6 +1,8 @@
 package com.opencookie.app.ui.screens.cookie
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -59,6 +62,12 @@ import kotlinx.coroutines.delay
 private const val BreakAnimationMs = 1440L
 private const val CrackHapticDelayMs = 720L
 private const val CrackHapticTailDelayMs = 64L
+private const val CookieHalvesOpenMs = 760L
+private const val PaperZoomLeadMs = 400L
+private const val PaperZoomMs = 2160
+private const val PaperTextDelayMs = 20L
+private const val PaperTextFadeMs = 560
+private const val ResetUnlockDelayMs = 1000L
 
 @Composable
 fun CookieScreen(
@@ -71,6 +80,9 @@ fun CookieScreen(
     val latestCookieMessage by rememberUpdatedState(uiState.cookieMessage)
     val latestError by rememberUpdatedState(uiState.error)
     val hapticFeedback = LocalHapticFeedback.current
+    var paperFocused by rememberSaveable { mutableStateOf(false) }
+    var textVisible by rememberSaveable { mutableStateOf(false) }
+    var resetEnabled by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(
         uiState.cookieMessage,
@@ -108,6 +120,43 @@ fun CookieScreen(
             }
         }
     }
+    LaunchedEffect(phase, uiState.cookieMessage) {
+        if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null) {
+            paperFocused = false
+            textVisible = false
+            resetEnabled = false
+            delay((CookieHalvesOpenMs - PaperZoomLeadMs).coerceAtLeast(0L))
+            if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null) {
+                paperFocused = true
+            }
+            delay(PaperZoomMs.toLong() + PaperTextDelayMs)
+            if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null) {
+                textVisible = true
+            }
+            delay(PaperTextFadeMs.toLong() + ResetUnlockDelayMs)
+            if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null) {
+                resetEnabled = true
+            }
+        } else {
+            paperFocused = false
+            textVisible = false
+            resetEnabled = false
+        }
+    }
+
+    val paperFocusProgress by animateFloatAsState(
+        targetValue = if (paperFocused) 1f else 0f,
+        animationSpec = tween(PaperZoomMs, easing = LinearOutSlowInEasing),
+        label = "paper_focus_progress",
+    )
+    val textReveal by animateFloatAsState(
+        targetValue = if (textVisible && uiState.cookieMessage != null) 1f else 0f,
+        animationSpec = tween(
+            PaperTextFadeMs,
+            easing = CubicBezierEasing(0.24f, 0.08f, 0.18f, 1f),
+        ),
+        label = "paper_text_reveal",
+    )
 
     val status = when (uiState.transactionState) {
         TransactionState.Building -> stringResource(R.string.tx_status_building)
@@ -118,6 +167,13 @@ fun CookieScreen(
     }
 
     val tappable = phase == CookiePhase.IDLE && uiState.buttonEnabled
+    val resetOpenedCookie = {
+        viewModel.dismissMessage()
+        phase = CookiePhase.IDLE
+    }
+    val stageModifier = Modifier
+        .fillMaxWidth(0.92f)
+        .aspectRatio(0.9f)
 
     OpenCookieBackground {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -149,6 +205,7 @@ fun CookieScreen(
                 FortuneCookieStage(
                     phase = phase,
                     tappable = tappable,
+                    paperFocusProgress = paperFocusProgress,
                     onTap = {
                         if (tappable) {
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -157,34 +214,25 @@ fun CookieScreen(
                             viewModel.breakCookie()
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .aspectRatio(0.9f),
+                    modifier = stageModifier,
                     paper = { paperModifier ->
-                        val paperReveal by animateFloatAsState(
-                            targetValue = when (phase) {
-                                CookiePhase.IDLE,
-                                CookiePhase.BREAKING,
-                                CookiePhase.WAITING_FOR_TRANSACTION,
-                                -> 0f
-                                CookiePhase.REVEALED -> 1f
-                            },
-                            animationSpec = tween(760, easing = FastOutSlowInEasing),
-                            label = "paper_physical_reveal",
-                        )
-                        val textReveal by animateFloatAsState(
-                            targetValue = if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null) 1f else 0f,
-                            animationSpec = tween(360, delayMillis = 620, easing = FastOutSlowInEasing),
-                            label = "paper_text_reveal",
-                        )
                         FortunePaper(
                             message = uiState.cookieMessage,
-                            textAlpha = textReveal,
-                            revealProgress = paperReveal,
+                            textRevealProgress = textReveal,
                             modifier = paperModifier,
                         )
                     },
                 )
+
+                if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null && resetEnabled) {
+                    Box(
+                        modifier = stageModifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = resetOpenedCookie,
+                        ),
+                    )
+                }
 
                 if (phase == CookiePhase.IDLE && uiState.showTapHint && tappable) {
                     TapHintHand(
@@ -206,10 +254,8 @@ fun CookieScreen(
                 maxCallsPerDay = uiState.maxCallsPerDay,
                 totalCalls = uiState.totalCalls,
                 configLoaded = uiState.configLoaded,
-                onOpenAnother = {
-                    viewModel.dismissMessage()
-                    phase = CookiePhase.IDLE
-                },
+                resetEnabled = resetEnabled,
+                onOpenAnother = resetOpenedCookie,
                 onDismissError = { viewModel.dismissError() },
             )
         }
@@ -241,6 +287,7 @@ private fun BottomArea(
     maxCallsPerDay: Int,
     totalCalls: Long,
     configLoaded: Boolean,
+    resetEnabled: Boolean,
     onOpenAnother: () -> Unit,
     onDismissError: () -> Unit,
 ) {
@@ -248,6 +295,7 @@ private fun BottomArea(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
+            .navigationBarsPadding()
             .padding(bottom = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -285,6 +333,7 @@ private fun BottomArea(
                 phase == CookiePhase.REVEALED -> {
                     SubtleAction(
                         text = stringResource(R.string.open_another),
+                        enabled = resetEnabled,
                         onClick = onOpenAnother,
                     )
                 }
@@ -316,6 +365,7 @@ private fun BottomArea(
 @Composable
 private fun SubtleAction(
     text: String,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     Text(
@@ -324,11 +374,12 @@ private fun SubtleAction(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                enabled = enabled,
                 onClick = onClick,
             )
             .padding(horizontal = 12.dp, vertical = 8.dp),
         style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.5.sp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 0.85f else 0.38f),
         textAlign = TextAlign.Center,
     )
 }

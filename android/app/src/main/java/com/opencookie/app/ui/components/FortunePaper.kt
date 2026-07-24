@@ -13,11 +13,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,24 +41,29 @@ private const val PaperSourceTop = 585
 private const val PaperSourceWidth = 848
 private const val PaperSourceHeight = 338
 private const val PaperVisibleAspect = PaperSourceWidth.toFloat() / PaperSourceHeight.toFloat()
+private const val TextRevealFeatherFraction = 0.14f
+
+private val FortuneMessageFont = FontFamily(
+    Font(
+        resId = R.font.lora_italic_wght,
+        weight = FontWeight.SemiBold,
+        style = FontStyle.Italic,
+    ),
+)
 
 @Composable
 fun FortunePaper(
     message: String?,
     modifier: Modifier = Modifier,
-    textAlpha: Float = 1f,
-    revealProgress: Float = 1f,
+    textRevealProgress: Float = 1f,
 ) {
     val paperImage = ImageBitmap.imageResource(R.drawable.fortune_paper)
 
     BoxWithConstraints(
         modifier = modifier,
     ) {
-        val reveal = revealProgress.coerceIn(0f, 1f)
-        val fullPaperWidth = maxWidth * 0.82f
+        val fullPaperWidth = maxWidth * 0.88f
         val fullPaperHeight = fullPaperWidth / PaperVisibleAspect
-        val clipWidth = fullPaperWidth * lerp(0.26f, 1f, reveal)
-        val clipHeight = fullPaperHeight * lerp(0.24f, 1f, reveal)
 
         val content = message?.trim().orEmpty()
         val compactText = content.length > 78 || maxWidth < 320.dp
@@ -73,9 +83,8 @@ fun FortunePaper(
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .width(clipWidth)
-                .height(clipHeight)
-                .graphicsLayer { clip = true },
+                .width(fullPaperWidth)
+                .height(fullPaperHeight),
             contentAlignment = Alignment.Center,
         ) {
             Box(
@@ -98,27 +107,64 @@ fun FortunePaper(
                 Box(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .fillMaxWidth(0.58f)
-                        .fillMaxHeight(0.38f)
+                        .fillMaxWidth(0.64f)
+                        .fillMaxHeight(0.74f)
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (content.isNotEmpty() && textAlpha > 0.01f) {
-                        Text(
-                            text = content,
-                            modifier = Modifier.alpha(textAlpha),
-                            textAlign = TextAlign.Center,
-                            maxLines = maxLines,
-                            overflow = TextOverflow.Ellipsis,
-                            style = TextStyle(
-                                fontFamily = FontFamily.Serif,
-                                fontStyle = FontStyle.Italic,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = fontSize,
-                                lineHeight = lineHeight,
-                                color = PaperInk,
-                            ),
-                        )
+                    if (content.isNotEmpty() && textRevealProgress > 0.001f) {
+                        val reveal = textRevealProgress.coerceIn(0f, 1f)
+                        val revealAlpha = when {
+                            reveal <= 0.04f -> 0f
+                            else -> 0.18f + 0.82f * easeOutCubic((reveal - 0.04f) / 0.96f)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    alpha = revealAlpha
+                                    compositingStrategy = CompositingStrategy.Offscreen
+                                }
+                                .drawWithCache {
+                                    val featherWidth = size.width * TextRevealFeatherFraction
+                                    onDrawWithContent {
+                                        drawContent()
+
+                                        if (reveal >= 1f) return@onDrawWithContent
+
+                                        val revealEdge = size.width * reveal
+                                        val solidStop = ((revealEdge - featherWidth) / size.width).coerceIn(0f, 1f)
+                                        val featherStop = (revealEdge / size.width).coerceIn(0f, 1f)
+                                        drawRect(
+                                            brush = Brush.horizontalGradient(
+                                                colorStops = arrayOf(
+                                                    0f to Color.Black,
+                                                    solidStop to Color.Black,
+                                                    featherStop to Color.Transparent,
+                                                    1f to Color.Transparent,
+                                                ),
+                                            ),
+                                            blendMode = BlendMode.DstIn,
+                                        )
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = content,
+                                textAlign = TextAlign.Center,
+                                maxLines = maxLines,
+                                overflow = TextOverflow.Ellipsis,
+                                style = TextStyle(
+                                    fontFamily = FortuneMessageFont,
+                                    fontStyle = FontStyle.Italic,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = fontSize,
+                                    lineHeight = lineHeight,
+                                    color = PaperInk,
+                                ),
+                            )
+                        }
                     }
                 }
             }
@@ -126,5 +172,8 @@ fun FortunePaper(
     }
 }
 
-private fun lerp(start: Float, stop: Float, fraction: Float): Float =
-    start + (stop - start) * fraction.coerceIn(0f, 1f)
+private fun easeOutCubic(value: Float): Float {
+    val t = value.coerceIn(0f, 1f)
+    val p = 1f - t
+    return 1f - p * p * p
+}

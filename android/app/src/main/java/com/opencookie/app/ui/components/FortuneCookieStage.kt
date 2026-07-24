@@ -41,6 +41,12 @@ private const val HalfTakeoverOffsetX = 0.01f
 private const val RevealedFinalHalfOffsetX = 0.172f
 private const val RevealedOpenY = 0.048f
 private const val RevealedHalfRotation = 8.4f
+private const val PaperHiddenScale = 0.39f
+private const val PaperFocusedScale = 1.02f
+private const val PaperHiddenOffsetY = 0.03f
+private const val PaperFocusedOffsetY = -0.14f
+private const val PaperArcPeakOffsetY = -0.24f
+private const val PaperFrontLayerThreshold = 0.58f
 
 @Composable
 fun FortuneCookieStage(
@@ -48,6 +54,7 @@ fun FortuneCookieStage(
     tappable: Boolean,
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
+    paperFocusProgress: Float = 0f,
     paper: @Composable (Modifier) -> Unit = {},
 ) {
     val idle = rememberInfiniteTransition(label = "cookie_idle")
@@ -228,17 +235,25 @@ fun FortuneCookieStage(
     val fallCurve = fallProgress.value.coerceIn(0f, 1f)
     val particleCurve = particleProgress.value.coerceIn(0f, 1f)
     val broken = phase != CookiePhase.IDLE
-    val paperPresence = if (phase == CookiePhase.REVEALED) {
-        ((revealedOpenProgress - 0.08f) / 0.24f).coerceIn(0f, 1f)
-    } else {
-        0f
-    }
     val calmMotion = when (phase) {
         CookiePhase.BREAKING -> 0f
         CookiePhase.WAITING_FOR_TRANSACTION -> 0.5f
         CookiePhase.REVEALED -> 0.28f
         CookiePhase.IDLE -> 0f
     }
+    val paperInScene = phase == CookiePhase.WAITING_FOR_TRANSACTION || phase == CookiePhase.REVEALED
+    val focusedPaper = paperFocusProgress.coerceIn(0f, 1f)
+    val paperScale = lerp(PaperHiddenScale, PaperFocusedScale, easeOutCubic(focusedPaper))
+    val paperOffsetY = if (focusedPaper < PaperFrontLayerThreshold) {
+        val liftProgress = easeOutCubic(focusedPaper / PaperFrontLayerThreshold)
+        lerp(PaperHiddenOffsetY, PaperArcPeakOffsetY, liftProgress)
+    } else {
+        val settleProgress = easeInOutCubic(
+            (focusedPaper - PaperFrontLayerThreshold) / (1f - PaperFrontLayerThreshold),
+        )
+        lerp(PaperArcPeakOffsetY, PaperFocusedOffsetY, settleProgress)
+    }
+    val paperShouldBeInFront = phase == CookiePhase.REVEALED && focusedPaper >= PaperFrontLayerThreshold
 
     Box(
         modifier = modifier.clickable(
@@ -258,16 +273,12 @@ fun FortuneCookieStage(
             )
         }
 
-        if (broken && paperPresence > 0.01f) {
+        if (paperInScene && !paperShouldBeInFront) {
             paper(
                 Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        alpha = paperPresence
-                        translationY =
-                            size.height * (0.115f - 0.255f * revealedOpenProgress) +
-                                paperDrift * density * 0.18f * calmMotion
-                        val paperScale = lerp(0.74f, 1.02f, revealedOpenProgress)
+                        translationY = size.height * paperOffsetY + paperDrift * density * 0.18f * calmMotion
                         scaleX = paperScale
                         scaleY = paperScale
                     },
@@ -357,6 +368,18 @@ fun FortuneCookieStage(
                             bridgeFloat * density +
                                 pressCurve * 3.5f * density +
                                 settleBob * density * 0.12f * calmMotion
+                    },
+            )
+        }
+
+        if (paperInScene && paperShouldBeInFront) {
+            paper(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationY = size.height * paperOffsetY + paperDrift * density * 0.18f * calmMotion
+                        scaleX = paperScale
+                        scaleY = paperScale
                     },
             )
         }
