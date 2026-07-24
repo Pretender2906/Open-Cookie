@@ -3,7 +3,7 @@
 **Document status:** Source of truth  
 **Project:** Open Cookie  
 **Audience:** Developers, AI coding agents, designers  
-**Last updated:** 2026-07-23
+**Last updated:** 2026-07-24
 
 ---
 
@@ -41,10 +41,10 @@ The main interaction is:
 8. The app waits for the blockchain transaction while the cookie remains broken but closed / near-closed.
 9. The transaction is confirmed and the actual result is retrieved.
 10. The broken-closed cookie transitions into the separate left/right halves.
-11. The halves open wider as the fortune paper emerges from inside the cookie.
-12. The paper reaches its final readable position.
-13. The actual prediction text is revealed.
-14. The user can open another cookie.
+11. A small fortune paper is already present behind the cookie while waiting; as the halves open, the paper is physically revealed between them — not via fade-in.
+12. The paper zooms forward along a gentle arc, passes over the cookie halves, and settles into its final readable size and position in the foreground.
+13. After a brief pause, the prediction text is revealed left-to-right across all lines simultaneously.
+14. The user can open another cookie via the bottom action or by tapping the revealed cookie/paper area once reset is unlocked.
 
 The experience should feel warm, elegant, tactile, playful, and polished.
 
@@ -137,7 +137,18 @@ Conceptually:
 - `CRACK` is the short physical break impulse.
 - `COOKIE_BROKEN_CLOSED` is the production bridge visual state immediately after the crack.
 - `WAITING_FOR_TRANSACTION` keeps `cookie_broken_closed` visually stable while the transaction is processed.
-- `REVEALED` begins only after confirmation, when the halves open wider and the paper emerges into its final readable position.
+- `REVEALED` begins only after confirmation, when the halves open wider, the hidden paper is uncovered, the paper zooms forward, and the text is revealed.
+
+Current Android implementation maps these concepts to:
+
+```text
+IDLE
+BREAKING            // press + tension + crack + transition to broken-closed
+WAITING_FOR_TRANSACTION
+REVEALED
+```
+
+`BREAKING` contains the internal press/tension/crack choreography described in this document.
 
 ---
 
@@ -218,7 +229,7 @@ clear crack impulse
 →
 cookie becomes cookie_broken_closed
 →
-crumbs appear as a consequence of the crack
+individual crumbs scatter from the break line
 →
 cookie waits in the broken-closed state
 →
@@ -335,56 +346,46 @@ Future possibility: a short crack sound may later be added and synchronized with
 
 Sound is not currently required.
 
-### Phase F — crumb burst
+### Phase F — individual crumb scatter
 
-At the exact moment of the break:
+At the exact moment of the break, individual cookie crumbs appear as a direct consequence of the crack.
 
-`crumb_burst`
+Production uses **separate single-crumb PNG assets** (`crumb_01` … `crumb_13`). Each file contains one crumb on a transparent background with no shadow.
 
-appears.
+This is **not** a classic particle system.
 
-It represents larger fragments produced by the break.
+Each displayed crumb is an independent object with its own:
+- start position near the break line;
+- initial impulse;
+- trajectory;
+- size / scale;
+- rotation;
+- delay;
+- duration;
+- optional small bounce;
+- final resting position.
 
-The fragments should:
-- originate visually near the breaking point;
-- move outward/downward;
-- have slight variation;
-- behave independently from the cookie halves.
+The same PNG may be reused multiple times with different parameters.
 
-This is a one-shot event.
+Desired physical feeling:
 
-The crumb burst must feel like a consequence of the crack itself, not like a disconnected effect that appears later.
+```text
+crack
+→ short initial impulse
+→ brief inertial motion
+→ gravity / fall
+→ optional small bounce
+→ quick damping
+→ full stop
+```
 
-### Phase G — falling crumbs
+Crumbs must NOT feel like confetti, fireworks, smoke, or endless flying particles.
 
-`crumb_fall`
+Active flight should be relatively short (roughly ~500–900 ms per crumb, varying by instance).
 
-continues the visual consequence of the break.
+After motion completes, each crumb remains visible at its final position.
 
-The larger crumbs should:
-- fall downward;
-- have slight individual variation;
-- not move as a single rigid image if the implementation can reasonably avoid it;
-- have a limited active motion lifetime;
-- eventually settle near / below the cookie.
-
-Some crumbs may leave the visible focus area or become less prominent, but the final scene should not become unnaturally clean immediately after the break.
-
-### Phase H — fine particles
-
-`crumb_particles`
-
-provides subtle fine crumbs / cookie dust.
-
-This should be restrained.
-
-It should:
-- appear briefly;
-- fade naturally;
-- not overwhelm the scene;
-- never look like smoke or a generic particle effect.
-
-### Phase I — pending broken-closed hold
+### Phase G — pending broken-closed hold
 
 The end of the initial break should establish the `WAITING_FOR_TRANSACTION` composition:
 
@@ -423,13 +424,11 @@ no major crumbs yet
 ↓
 CRACK
 ↓
-crumb_burst at the break point
+individual crumbs launch from the break line
 ↓
-larger fragments fall after the break
+crumbs fall / scatter with independent trajectories
 ↓
-fine particles dissipate
-↓
-some crumbs settle near / below the cookie
+some crumbs settle near / below / beside the cookie
 ↓
 no continuous crumb animation
 ```
@@ -439,19 +438,110 @@ Do NOT create:
 - crumbs continuously respawning;
 - crumbs teleporting back to their initial position;
 - crumbs appearing from nowhere;
-- all crumbs moving identically;
-- crumbs permanently attached to the cookie halves.
+- all crumbs moving identically or symmetrically;
+- crumbs permanently attached to the cookie halves;
+- composite full-stage crumb overlays that move as one image;
+- crumbs resting on top of moving cookie halves after the halves separate.
 
 The entire crumb sequence should happen once per BREAK action.
 
 After the crumb sequence finishes, the waiting state should be visually calm, with settled crumbs allowed to remain visible.
 
-Current implementation uses separate crumb assets:
-- `crumb_burst`
-- `crumb_fall`
-- `crumb_particles`
+## Current production crumb system
 
-These assets are intended to support the choreography. If the current implementation has limitations in exact physical crumb behavior, document those as implementation limitations rather than redefining the desired visual behavior.
+Production uses only individual assets:
+
+```text
+crumb_01 … crumb_13
+```
+
+Each asset is one crumb. Do **not** use legacy composite crumb layers:
+- `crumb_burst` (deprecated)
+- `crumb_fall` (deprecated)
+- `crumb_particles` (deprecated)
+
+Legacy composite assets in `android/design/cookie_opening_v2/` are reference-only for the old system and must not be mixed into the current implementation.
+
+## Crumb size and quantity
+
+The scene should contain enough visible crumbs to feel like a real break, but not so many that it reads as an explosion.
+
+Use a mix of:
+- a few larger fragments;
+- several medium pieces;
+- many small crumbs / dust-like pieces.
+
+The same PNG may appear more than once with different scale, rotation, and trajectory.
+
+Scale variation must remain natural. Avoid huge crumbs next to microscopic ones in the same cluster.
+
+## Crumb motion character
+
+Prefer:
+- asymmetric, independent trajectories;
+- short post-crack motion;
+- slight rotation during flight;
+- small, uneven bounce on only some crumbs;
+- quick settling.
+
+Avoid:
+- long graceful arcs;
+- identical left/right symmetry;
+- strong bouncy ball behavior;
+- crumbs flying far off-screen;
+- infinite rotation after landing.
+
+## Random scatter scenarios
+
+Each BREAK randomly selects one of several predefined scatter scenarios and keeps it fixed for the entire break cycle.
+
+Current production direction includes six scenario presets with different character, for example:
+- balanced scatter;
+- left-heavy scatter;
+- right-heavy scatter;
+- compact center scatter;
+- wide asymmetric scatter;
+- chunky scatter with more large fragments.
+
+Scenarios must differ in density, direction bias, size mix, and final resting pattern — not merely by tiny coordinate offsets.
+
+The selected scenario must not change mid-animation.
+
+## Final resting positions
+
+After motion completes, crumbs remain where they landed.
+
+They must:
+- stay visible;
+- stop moving;
+- stop rotating;
+- not loop or respawn.
+
+Final positions should be distributed naturally around the cookie:
+- some closer to the break;
+- some lower;
+- some slightly left or right;
+- different vertical levels;
+- different sizes.
+
+Do not scatter crumbs far across the whole screen.
+
+Critically, final positions must account for the later separation of the cookie halves during `REVEALED`.
+
+Settled crumbs must **not** appear to rest on the moving surface of a cookie half once the halves open apart.
+
+They should read as separate objects lying around the broken cookie, not glued to the halves.
+
+## Layer order
+
+Crumbs are independent scene objects.
+
+During `REVEALED`:
+- crumbs may remain visible around the broken cookie;
+- separated cookie halves render above crumbs where overlap would otherwise make crumbs look attached to the moving halves;
+- the fortune paper and text render above crumbs when the paper moves to the foreground.
+
+Crumbs must never cover the paper or prediction text.
 
 ---
 
@@ -493,11 +583,13 @@ The scene should communicate:
 
 > The cookie has cracked open. Something is inside, but the final reveal is still waiting for confirmation.
 
-The fortune paper must not appear during the initial waiting state.
+During the initial waiting state, the fortune paper object may already exist in the scene, but it must remain:
+- fully hidden behind `cookie_broken_closed`;
+- small in scale;
+- fully opaque as an object (no paper fade-in);
+- invisible to the user until the confirmed reveal begins.
 
-The full paper must NOT appear as a complete sheet behind, above, or outside the cookie during waiting.
-
-Do not make the waiting state look like the completed reveal.
+The waiting state must NOT look like the completed reveal. The user should not perceive a readable sheet, emerging text, or final paper size before confirmation.
 
 ---
 
@@ -524,7 +616,7 @@ Transaction confirmation
 ↓
 Prediction result received
 ↓
-REVEALED: cookie opens wider, paper emerges, text appears
+REVEALED: halves open, hidden paper is uncovered, paper zooms forward, text reveals left-to-right
 ```
 
 If the user leaves the app for wallet approval and returns:
@@ -547,9 +639,9 @@ Only after the transaction result is available:
 
 - the broken-closed cookie transitions into the separate left/right halves;
 - the halves open wider;
-- the fortune paper emerges from inside the cookie;
-- the paper moves toward the user / into the foreground and settles into its final readable position;
-- the prediction text appears on the paper only after the paper reaches that final readable position;
+- the small fortune paper behind them becomes visible as the halves physically open around it;
+- the paper zooms forward along a gentle arc, transitions from behind the halves to in front of them, and settles into its final readable position;
+- the prediction text appears on the paper only after the paper zoom completes;
 - the broken cookie halves remain continuous with the previous waiting composition;
 - the scene transitions smoothly.
 
@@ -574,12 +666,50 @@ cookie_broken_closed transitions into aligned left/right halves
 →
 halves gradually open wider
 →
-paper emerges from between them
+small paper is physically revealed between them
 →
-paper gently moves forward / settles into final position
+halves stop opening
 →
-text appears
+paper zooms forward / settles into final position
+→
+text is revealed left-to-right
 ```
+
+## Recommended REVEALED choreography
+
+Approximate current tuning values; exact timing may be adjusted visually.
+
+```text
+CRACK
+→ TRANSACTION CONFIRMED
+→ COOKIE HALVES MOVE APART
+→ PAPER IS REVEALED BEHIND THEM
+→ PAPER ZOOM / MOVES FORWARD TO FINAL SIZE
+→ PAPER STOPS
+→ TEXT REVEALS LEFT-TO-RIGHT
+→ RESET UNLOCKS
+```
+
+Current reference timings:
+
+| Stage | Approx. duration / offset |
+|---|---|
+| Halves open | ~760 ms |
+| Paper zoom lead (starts before halves fully stop) | ~400 ms |
+| Paper zoom | ~2160 ms |
+| Pause before text reveal | ~20 ms |
+| Text reveal | ~560 ms |
+| Reset unlock delay after full text reveal | ~1000 ms |
+
+Important rules:
+
+- the paper must not fade in; it becomes visible because the cookie halves move away from it;
+- the paper zoom may begin slightly before the halves fully stop, but must still read as one continuous reveal;
+- the paper must start behind the cookie halves and move to the foreground during zoom, ideally along a subtle upward arc so it does not appear to pass through the top edge of the halves;
+- text must not appear before paper zoom completes;
+- reset to IDLE must not be available until the message has fully appeared.
+
+## Text readability
 
 The text must be readable.
 
@@ -589,7 +719,7 @@ Do not force all predictions into tiny text merely to fit a fixed layout.
 
 If a prediction is long:
 - use an appropriate readable font size;
-- allow multiple lines;
+- allow 3 lines by default and 4 lines for longer messages;
 - preserve comfortable margins;
 - keep the text visually centered and balanced.
 
@@ -601,11 +731,19 @@ Never let text:
 - become unreadably small;
 - appear beside the paper instead of on it.
 
+## Reset interaction
+
+After the reveal completes, the user may return to IDLE by:
+- tapping `Open Another` in the bottom area;
+- tapping the revealed cookie/paper stage area.
+
+Reset must remain disabled until the full text reveal has finished and an additional short unlock delay has passed, to prevent accidental dismissal while the message is still appearing.
+
 ---
 
 # 11. Fortune paper
 
-The fortune paper is a separate transparent asset.
+The fortune paper is a separate transparent asset (`fortune_paper`).
 
 It should not be treated as a full-screen bitmap.
 
@@ -618,45 +756,98 @@ The paper should:
 - remain visually integrated with the cookie;
 - provide sufficient space for the prediction.
 
-The fortune paper must not appear during:
+## Visibility rules
+
+The fortune paper must not be readable during:
 - `IDLE`
-- `PRESS`
-- `TENSION`
-- `CRACK`
-- `COOKIE_BROKEN_CLOSED`
+- `BREAKING` / press / tension / crack
 - the initial `WAITING_FOR_TRANSACTION` state.
 
-It must visually appear to originate from inside the cookie only after the transaction has been confirmed and the reveal begins. The cookie halves should remain in front of and around the paper, naturally framing the emerging paper.
+During `WAITING_FOR_TRANSACTION`, the paper object may already be present in the scene, but it must remain hidden behind the broken cookie and must not read as a visible sheet.
 
-During `WAITING_FOR_TRANSACTION`, the full paper must remain hidden. The waiting state should not look like a sheet is floating behind the cookie.
+During `REVEALED`, the paper must visually originate from inside the cookie:
+- first hidden behind the broken cookie / halves;
+- then physically revealed as the halves open;
+- then zoom forward into its final readable position in the foreground.
 
-The full paper must NOT suddenly appear as a complete sheet behind, above, or outside the cookie.
+Do NOT reveal the paper by fading it in.
 
-Only after the blockchain transaction is confirmed does the paper emerge from between the cookie halves and move into its final readable position in the `REVEALED` state.
+The paper must be fully opaque as an object from the moment it becomes visible. Visibility should come from depth, scale, and the cookie halves moving away from it — not from alpha animation of the paper itself.
 
-The transition must be smooth and continuous, so it feels like the same physical paper is being pulled/revealed from inside the broken cookie rather than a new paper asset suddenly appearing.
+## Paper motion
 
-The paper may subtly scale up, move upward / forward, and gain visual prominence during the confirmed reveal, but this must read as one continuous physical object moving from:
+The paper uses two visual scale states:
 
 ```text
-hidden inside the broken cookie
+hidden behind cookie
 →
-emerging from between the cookie halves
+small scale, centered between halves
 →
-fully visible
-→
-final readable position
+zoom forward to final readable scale
 ```
 
-The prediction text should appear clearly only after the blank paper has completed this movement.
+The paper zoom should feel like the sheet is coming toward the user.
 
-The current design intentionally prioritizes:
-- visual clarity;
-- readable text;
-- smooth animation;
-- believable illusion.
+Prefer:
+- smooth ease-out motion;
+- a subtle upward arc during the transition from behind the halves to the foreground;
+- layer reordering so the paper moves from behind the cookie to in front of it during zoom.
 
-Perfect physical realism is NOT required.
+Avoid:
+- sudden pop-in;
+- paper fading from transparent to opaque;
+- paper passing visibly through the top edge of the cookie halves;
+- text appearing while the paper is still zooming.
+
+Current reference scale values:
+- hidden scale: ~0.39
+- final scale: ~1.02
+
+Exact values may be tuned, but the hidden paper must remain small enough to feel contained inside the cookie gap, and the final paper must remain large enough for 3–4 readable lines.
+
+## Paper layout
+
+Current reference layout values:
+- paper width inside stage: ~88% of available width;
+- text area width: ~64% of paper width;
+- text area height: ~74% of paper height;
+- horizontal / vertical padding around text: small but comfortable.
+
+These values are tuned so long 3–4 line messages fit without reducing font size below readable levels.
+
+Do not solve text overflow primarily by shrinking the font if the paper layout can be adjusted instead.
+
+## Typography
+
+The fortune text should feel like warm ink on paper, not like default UI text.
+
+Current production direction:
+- font: **Lora Italic** (`lora_italic_wght.ttf`);
+- weight: SemiBold;
+- alignment: centered horizontally and vertically within the paper text area;
+- color: warm dark brown ink (`PaperInk`, currently `#5A4034`);
+- line count: 3 lines by default, 4 for longer messages;
+- responsive font sizes based on message length and screen width.
+
+Avoid:
+- pure black text;
+- generic system serif defaults if a dedicated paper font is available;
+- decorative handwritten fonts that harm readability;
+- changing text position during reveal.
+
+## Text reveal
+
+The prediction text must appear only after the paper zoom completes.
+
+Preferred reveal behavior:
+- all lines reveal simultaneously;
+- reveal direction: left to right;
+- effect: soft horizontal mask / feathered reveal, optionally with a very light accompanying alpha fade;
+- no character-by-character typing;
+- no sequential line-by-line reveal;
+- text remains centered during the entire reveal.
+
+The reveal should feel magical and organic, not like a rigid rectangular wipe.
 
 A stylized illusion is preferred over a technically complex but visually awkward physical simulation.
 
@@ -695,21 +886,19 @@ NOT the immediate post-break waiting composition
     ↓
 NO crumbs included
 
-crumb_burst
+crumb_01 … crumb_13
     ↓
-large fragments during initial break
+individual single-crumb PNGs used by the production scatter system
+    ↓
+each instance is animated independently at runtime
+    ↓
+the same PNG may be reused with different scale / rotation / trajectory
 
-crumb_fall
+fortune_paper
     ↓
-larger crumbs falling after break
-
-crumb_particles
+blank / readable paper asset used during the confirmed reveal
     ↓
-fine crumbs / subtle particles
-
-fortune_paper_blank
-    ↓
-blank paper used during the confirmed reveal before prediction text is shown
+text is rendered on top of the paper in-app
 
 cookie_waiting
     ↓
@@ -798,6 +987,8 @@ The cookie must not:
 - jump between screen sizes.
 
 Use constrained, responsive layout rather than hard-coded oversized dimensions.
+
+The home-screen bottom area (tap hint, cost, status, `Open Another`, stats) must respect the device navigation-bar safe area so text is not clipped or hidden by system UI.
 
 ---
 
@@ -898,11 +1089,13 @@ The paper must feel like part of the cookie-opening event.
 Rule:
 The paper's movement must begin from inside the cookie after confirmation and remain continuous through the reveal.
 
-The paper must not appear as a separate overlay behind the cookie.
+The paper must not appear as a separate overlay that fades in above the cookie.
+
+Prefer physical uncovering by the halves, then forward zoom into the foreground.
 
 ### Failure 4b — Full paper appearing too early
 
-The paper should not suddenly appear as a complete sheet behind, above, or outside the cookie before transaction confirmation.
+The paper should not suddenly appear as a complete readable sheet behind, above, or outside the cookie before transaction confirmation.
 
 Result:
 - the paper feels like an overlay;
@@ -910,7 +1103,40 @@ Result:
 - the confirmed reveal has no meaningful motion left.
 
 Rule:
-During waiting, keep the fortune paper hidden. Reveal the paper only after confirmation, emerging from between the opening halves.
+During waiting, keep the fortune paper hidden behind the cookie even if the paper object already exists in the scene. Reveal it only after confirmation, physically uncovered by the opening halves.
+
+### Failure 4c — Paper fade-in instead of physical reveal
+
+The paper must not appear by animating alpha from 0 to 1.
+
+Result:
+- the reveal feels like a UI overlay rather than an object inside the cookie;
+- the halves no longer appear to uncover anything.
+
+Rule:
+Keep the paper fully opaque and reveal it through depth, scale, and cookie motion.
+
+### Failure 4d — Text appears before paper zoom completes
+
+The prediction text must not fade or reveal while the paper is still zooming forward.
+
+Result:
+- the choreography feels rushed and disconnected;
+- the message appears before the paper has settled.
+
+Rule:
+Text reveal starts only after paper zoom completes, followed by a brief pause.
+
+### Failure 4e — Accidental early reset
+
+The user must not be able to dismiss the reveal while the message is still appearing.
+
+Result:
+- the experience feels fragile;
+- users accidentally return to IDLE before reading the fortune.
+
+Rule:
+Enable reset only after the full text reveal completes and a short unlock delay passes.
 
 ### Failure 5 — Excessive spacing
 
@@ -936,6 +1162,40 @@ Rule:
 Crumb animation is a one-shot consequence of the crack / BREAK.
 
 Some settled crumbs may remain visible near / below the cookie after active motion finishes.
+
+### Failure 7b — Composite crumb overlays
+
+Do not animate crumbs as one or more full-stage composite bitmap overlays.
+
+Result:
+- crumbs look disconnected from the break point;
+- all crumbs move as one rigid image;
+- final positions look like suspended dust rather than settled pieces.
+
+Rule:
+Use only individual `crumb_01` … `crumb_13` assets, each as an independent animated instance.
+
+### Failure 7c — Crumbs resting on moving cookie halves
+
+Settled crumbs must not appear to sit on the surface of a cookie half that later moves apart during `REVEALED`.
+
+Result:
+- crumbs look glued to the cookie;
+- physics feels impossible once the halves separate.
+
+Rule:
+Place final crumb positions around the cookie, below/beside the break zone, and ensure layer order keeps moving halves above overlapping crumbs where needed.
+
+### Failure 7d — Particle-explosion crumb behavior
+
+Crumbs must not behave like confetti or a generic particle emitter.
+
+Result:
+- the break feels like an explosion rather than fragile cookie fragments;
+- motion continues too long or looks too uniform.
+
+Rule:
+Keep post-crack motion short, asymmetric, weighted, and quickly settling.
 
 ### Failure 8 — Explosive immediate break
 
@@ -974,11 +1234,20 @@ Any AI coding agent working on Open Cookie must:
 
 ---
 
+### Failure 9 — Bottom content hidden by system navigation
+
+Bottom labels, actions, and stats must remain readable above the device navigation bar.
+
+Rule:
+Apply navigation-bar safe-area padding to the bottom content area on the home screen.
+
+---
+
 # 19. Definition of success
 
 The implementation is successful when a user can watch the sequence and perceive it as one coherent event:
 
-> "I tapped the cookie. It reacted immediately, compressed slightly, resisted and trembled, then cracked with a satisfying tactile impulse. The broken cookie stayed closed / near-closed while my transaction was processed. After confirmation, the cookie opened wider, the paper emerged naturally from inside, and my fortune appeared on the paper."
+> "I tapped the cookie. It reacted immediately, compressed slightly, resisted and trembled, then cracked with a satisfying tactile impulse. The broken cookie stayed closed / near-closed while my transaction was processed. After confirmation, the cookie opened wider, a small paper inside was uncovered, the paper came forward naturally, and my fortune appeared on it from left to right."
 
 The user should NOT perceive:
 
@@ -998,10 +1267,10 @@ The final mental model is:
 6. The cookie becomes `cookie_broken_closed`.
 7. The broken cookie remains slightly open / near-closed while the blockchain transaction is processed.
 8. Once the transaction is confirmed, the cookie opens wider.
-9. The fortune paper emerges naturally from inside the cookie.
-10. The paper moves into a comfortable readable position.
-11. The actual blockchain-generated prediction appears on the paper.
-12. The user can then open another cookie.
+9. A small paper inside the cookie is physically uncovered by the opening halves.
+10. The paper zooms forward into a comfortable readable position in the foreground.
+11. The actual blockchain-generated prediction appears on the paper from left to right.
+12. The user can then open another cookie via the bottom action or by tapping the revealed stage once reset unlocks.
 
 The experience should feel:
 - tactile;
