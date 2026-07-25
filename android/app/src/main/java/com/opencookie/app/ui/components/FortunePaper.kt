@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
@@ -21,10 +22,11 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,14 +43,19 @@ private const val PaperSourceTop = 585
 private const val PaperSourceWidth = 848
 private const val PaperSourceHeight = 338
 private const val PaperVisibleAspect = PaperSourceWidth.toFloat() / PaperSourceHeight.toFloat()
+private const val PaperTextAreaWidthFraction = 0.64f
+/** Matches the visible cream band on the paper crop, not the full strip height. */
+private const val PaperTextAreaHeightFraction = 0.62f
+/** Positions the text block on the paper; cream band sits below geometric center. */
+private const val PaperTextAreaVerticalBias3Lines = 0.28f
+private const val PaperTextAreaVerticalBias4Lines = 0.16f
+private const val LineHeightSafety3Lines = 0.95f
+private const val LineHeightSafety4Lines = 0.90f
 private const val TextRevealFeatherFraction = 0.14f
 
 private val FortuneMessageFont = FontFamily(
-    Font(
-        resId = R.font.lora_italic_wght,
-        weight = FontWeight.SemiBold,
-        style = FontStyle.Italic,
-    ),
+    Font(R.font.kalam_regular, FontWeight.Normal),
+    Font(R.font.kalam_bold, FontWeight.Bold),
 )
 
 @Composable
@@ -66,19 +73,36 @@ fun FortunePaper(
         val fullPaperHeight = fullPaperWidth / PaperVisibleAspect
 
         val content = message?.trim().orEmpty()
-        val compactText = content.length > 78 || maxWidth < 320.dp
-        val mediumText = content.length > 58 || maxWidth < 380.dp
-        val fontSize = when {
-            compactText -> 13.sp
-            mediumText -> 15.sp
-            else -> 17.sp
-        }
-        val lineHeight = when {
-            compactText -> 17.sp
-            mediumText -> 20.sp
-            else -> 22.sp
-        }
         val maxLines = if (content.length > 68) 4 else 3
+        val textPaddingTop = 4.dp
+        val textPaddingBottom = 4.dp
+        val textAreaHeight = fullPaperHeight * PaperTextAreaHeightFraction - textPaddingTop - textPaddingBottom
+        val lineHeightSafety = if (maxLines == 4) LineHeightSafety4Lines else LineHeightSafety3Lines
+        val maxLineHeightDp = textAreaHeight / maxLines * lineHeightSafety
+        val paperTextAreaAlignment = BiasAlignment(
+            horizontalBias = 0f,
+            verticalBias = if (maxLines == 4) {
+                PaperTextAreaVerticalBias4Lines
+            } else {
+                PaperTextAreaVerticalBias3Lines
+            },
+        )
+
+        val compactText = maxLines == 4 || content.length > 78 || maxWidth < 320.dp
+        val mediumText = !compactText && (content.length > 58 || maxWidth < 380.dp)
+        val baseFontSize = when {
+            compactText -> 15.sp
+            mediumText -> 17.sp
+            else -> 19.sp
+        }
+        val baseLineHeight = when {
+            compactText -> 18.sp
+            mediumText -> 21.sp
+            else -> 23.sp
+        }
+        val lineHeight = minOf(baseLineHeight.value, maxLineHeightDp.value).sp
+        val scale = lineHeight.value / baseLineHeight.value
+        val fontSize = (baseFontSize.value * scale).sp
 
         Box(
             modifier = Modifier
@@ -106,10 +130,10 @@ fun FortunePaper(
 
                 Box(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth(0.64f)
-                        .fillMaxHeight(0.74f)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .align(paperTextAreaAlignment)
+                        .fillMaxWidth(PaperTextAreaWidthFraction)
+                        .fillMaxHeight(PaperTextAreaHeightFraction)
+                        .padding(start = 8.dp, end = 8.dp, top = textPaddingTop, bottom = textPaddingBottom),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (content.isNotEmpty() && textRevealProgress > 0.001f) {
@@ -157,11 +181,17 @@ fun FortunePaper(
                                 overflow = TextOverflow.Ellipsis,
                                 style = TextStyle(
                                     fontFamily = FortuneMessageFont,
-                                    fontStyle = FontStyle.Italic,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Normal,
                                     fontSize = fontSize,
                                     lineHeight = lineHeight,
                                     color = PaperInk,
+                                    platformStyle = PlatformTextStyle(
+                                        includeFontPadding = false,
+                                    ),
+                                    lineHeightStyle = LineHeightStyle(
+                                        alignment = LineHeightStyle.Alignment.Center,
+                                        trim = LineHeightStyle.Trim.Both,
+                                    ),
                                 ),
                             )
                         }

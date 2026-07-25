@@ -8,6 +8,7 @@ import com.opencookie.app.domain.model.Cluster
 import com.opencookie.app.domain.model.ClusterConfig
 import com.opencookie.app.domain.model.ClusterDefaults
 import com.opencookie.app.domain.model.PendingTransaction
+import com.opencookie.app.domain.model.ProfilePresence
 import com.opencookie.app.domain.model.ProgramConfig
 import com.opencookie.app.domain.model.UserProfile
 import com.opencookie.app.util.PublicKey
@@ -39,10 +40,14 @@ class AppSession @Inject constructor(
         val pendingTransactions: List<PendingTransaction> = emptyList(),
         val isOnline: Boolean = true,
         val lastRefreshMs: Long = 0,
+        val lastProfileRefreshMs: Long = 0,
         val isProfileInitialized: Boolean = false,
+        val profilePresence: ProfilePresence = ProfilePresence.Unknown,
     ) {
         val isWalletConnected: Boolean get() = walletAddress != null
         val hasProfile: Boolean get() = profile != null || isProfileInitialized
+        val isProfilePresenceKnown: Boolean
+            get() = profilePresence == ProfilePresence.Exists || profilePresence == ProfilePresence.NotExists
         val hasPendingTransactions: Boolean get() = pendingTransactions.isNotEmpty()
     }
 
@@ -52,8 +57,33 @@ class AppSession @Inject constructor(
         }
     }
 
+    fun applyBreakCookieStats(totalCalls: Long, callsToday: Int) {
+        val wallet = _state.value.walletAddress ?: return
+        val existing = _state.value.profile
+        updateProfile(
+            UserProfile(
+                owner = wallet,
+                totalCalls = totalCalls,
+                callsToday = callsToday,
+                lastDay = existing?.lastDay ?: 0,
+                bump = existing?.bump ?: 0,
+            ),
+        )
+        setProfilePresence(ProfilePresence.Exists)
+        markProfileRefreshed()
+    }
+
+    fun markProfileCreatedLocally() {
+        setProfilePresence(ProfilePresence.Exists)
+        markProfileRefreshed()
+    }
+
     fun clearProfile() {
         _state.update { it.copy(profile = null, isProfileInitialized = false) }
+    }
+
+    fun setProfilePresence(presence: ProfilePresence) {
+        _state.update { it.copy(profilePresence = presence) }
     }
 
     fun updateConfig(config: ProgramConfig) {
@@ -78,6 +108,8 @@ class AppSession @Inject constructor(
                 walletUriBase = boundUri,
                 profile = null,
                 isProfileInitialized = false,
+                profilePresence = ProfilePresence.Unknown,
+                lastProfileRefreshMs = 0L,
             )
         }
     }
@@ -112,6 +144,10 @@ class AppSession @Inject constructor(
 
     fun markRefreshed() {
         _state.update { it.copy(lastRefreshMs = System.currentTimeMillis()) }
+    }
+
+    fun markProfileRefreshed() {
+        _state.update { it.copy(lastProfileRefreshMs = System.currentTimeMillis()) }
     }
 
     suspend fun addPendingTransaction(tx: PendingTransaction) {

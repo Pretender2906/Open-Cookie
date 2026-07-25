@@ -7,7 +7,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.opencookie.app.data.session.AppSession
 import com.opencookie.app.domain.repository.ProfileRepository
-import com.opencookie.app.util.PublicKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,7 +35,7 @@ class DataRefreshCoordinator @Inject constructor(
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {
                     isForeground = true
-                    startPolling(immediate = true)
+                    startPolling(appOpened = true)
                 }
 
                 override fun onStop(owner: LifecycleOwner) {
@@ -47,14 +46,14 @@ class DataRefreshCoordinator @Inject constructor(
         )
         if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
             isForeground = true
-            startPolling(immediate = false)
+            startPolling(appOpened = false)
         }
     }
 
-    fun startPolling(immediate: Boolean = false) {
+    fun startPolling(appOpened: Boolean = false) {
         pollingJob?.cancel()
         pollingJob = scope.launch {
-            if (immediate) runCatching { refreshNow() }
+            if (appOpened) runCatching { refreshNow(appOpened = true) }
             while (isActive && isForeground) {
                 delay(REFRESH_INTERVAL_MS)
                 runCatching { refreshNow() }
@@ -62,8 +61,8 @@ class DataRefreshCoordinator @Inject constructor(
         }
     }
 
-    suspend fun refreshNow(force: Boolean = false) {
-        refreshMutex.withLock { refreshOnce(force) }
+    suspend fun refreshNow(force: Boolean = false, appOpened: Boolean = force) {
+        refreshMutex.withLock { refreshOnce(force, appOpened) }
     }
 
     suspend fun refreshAfterConnect() {
@@ -76,7 +75,7 @@ class DataRefreshCoordinator @Inject constructor(
         }
     }
 
-    private suspend fun refreshOnce(force: Boolean) {
+    private suspend fun refreshOnce(force: Boolean, appOpened: Boolean) {
         appReadiness.awaitReady()
         appSession.pruneStalePendingTransactions()
         val session = appSession.state.value
@@ -84,20 +83,39 @@ class DataRefreshCoordinator @Inject constructor(
             appSession.markRefreshed()
             return
         }
-        if (!force && session.isTransactionInProgress) return
+        if (!force && !appOpened && session.isTransactionInProgress) return
 
         profileRepository.fetchConfig()
         val wallet = session.walletAddress
         if (wallet != null) {
-            profileRepository.fetchProfile(wallet)
+            if (shouldRefreshProfile(session, force, appOpened)) {
+                profileRepository.fetchProfile(wallet)
+            }
             profileRepository.fetchBalance(wallet)
         }
         appSession.markRefreshed()
-        Log.d(TAG, "refresh complete config=${appSession.state.value.config != null} profile=${appSession.state.value.profile != null}")
+        Log.d(
+            TAG,
+            "refresh complete config=${appSession.state.value.config != null} " +
+                "profile=${appSession.state.value.profile != null} " +
+                "presence=${appSession.state.value.profilePresence}",
+        )
+    }
+
+    private fun shouldRefreshProfile(
+        session: AppSession.SessionState,
+        force: Boolean,
+        appOpened: Boolean,
+    ): Boolean {
+        if (force || appOpened || !session.isProfilePresenceKnown) return true
+        if (session.lastProfileRefreshMs == 0L) return true
+        val elapsedMs = System.currentTimeMillis() - session.lastProfileRefreshMs
+        return elapsedMs >= PROFILE_REFRESH_INTERVAL_MS
     }
 
     companion object {
         private const val TAG = "DataRefresh"
         private const val REFRESH_INTERVAL_MS = 30_000L
+        private const val PROFILE_REFRESH_INTERVAL_MS = 3_600_000L
     }
 }

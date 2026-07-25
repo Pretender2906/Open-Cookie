@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,7 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -58,6 +56,7 @@ import com.opencookie.app.R
 import com.opencookie.app.domain.model.NetworkFeePriority
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.ui.components.AppMessage
+import com.opencookie.app.ui.components.OpenCookieConfirmDialog
 import com.opencookie.app.ui.components.ScreenTransactionStatus
 import com.opencookie.app.ui.components.WalletChip
 import com.opencookie.app.ui.theme.OpenCookieBackground
@@ -305,20 +304,13 @@ fun ProfileScreen(
     }
 
     if (uiState.showCloseProfileDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissCloseProfileDialog() },
-            title = { Text(stringResource(R.string.profile_close_confirm_title)) },
-            text = { Text(stringResource(R.string.profile_close_confirm_message)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmCloseProfile() }) {
-                    Text(stringResource(R.string.profile_close_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissCloseProfileDialog() }) {
-                    Text(stringResource(R.string.profile_close_cancel))
-                }
-            },
+        OpenCookieConfirmDialog(
+            title = stringResource(R.string.profile_close_confirm_title),
+            message = stringResource(R.string.profile_close_confirm_message),
+            confirmText = stringResource(R.string.profile_close_confirm),
+            dismissText = stringResource(R.string.profile_close_cancel),
+            onConfirm = { viewModel.confirmCloseProfile() },
+            onDismiss = { viewModel.dismissCloseProfileDialog() },
         )
     }
 }

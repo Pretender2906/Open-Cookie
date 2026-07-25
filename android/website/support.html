@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support - Open Cookie</title>
+    <meta name="description" content="Support for OpenCookie — product mechanics, fees, profiles, and how to get the app on Solana Mobile.">
+    <title>Support - OpenCookie</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 </head>
 <body class="no-transition">
-    <header>
+    <header class="site-header">
         <div class="container">
-            <nav>
-                <a href="index.html" class="logo">
-                    <span class="logo-icon"></span>
-                    Open Cookie
+            <nav class="site-nav" aria-label="Primary">
+                <a href="index.html" class="brand">
+                    <img src="icon.png" alt="" class="brand-mark" width="22" height="22">
+                    OPEN COOKIE
                 </a>
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
-                    <li><a href="support.html">Support</a></li>
+                    <li><a href="support.html" aria-current="page">Support</a></li>
                     <li><a href="privacy.html">Privacy</a></li>
                     <li><a href="terms.html">Terms</a></li>
                 </ul>
@@ -28,15 +30,20 @@
         </div>
     </header>
 
-    <main class="content-page">
+    <main class="site-main content-page">
         <div class="container">
-            <h1 class="reveal">Support</h1>
+            <section class="page-hero reveal">
+                <span class="section-tag">Support</span>
+                <h1 class="wordmark">OPEN COOKIE</h1>
+                <p>
+                    Answers about how OpenCookie works, what happens on-chain, and how to get help
+                </p>
+            </section>
 
-            <section class="reveal">
-                <p>Open Cookie is still in development. If you are testing a build, have feedback, or found a bug, reach out below.</p>
-
-                <div class="card" style="margin-top: 40px;">
-                    <h3>Contact</h3>
+            <section class="legal-card reveal">
+                <div class="legal-meta">Contact</div>
+                <h2>Reach out directly</h2>
+                <div class="legal-prose">
                     <p>Support email — select the address below to copy it, or use the buttons.</p>
                     <div class="contact-block">
                         <label class="contact-label" for="support-email">Email</label>
@@ -50,45 +57,84 @@
                             onclick="this.select()"
                         >
                         <div class="contact-actions">
-                            <a href="mailto:opencookie.sol@gmail.com" class="btn btn-secondary">Send email</a>
-                            <button type="button" class="btn btn-ghost" data-copy="#support-email">Copy address</button>
+                            <a href="mailto:opencookie.sol@gmail.com" class="button">Send email</a>
+                            <button type="button" class="button-ghost" data-copy="#support-email">Copy address</button>
                         </div>
                         <p class="copy-feedback" id="copy-feedback" aria-live="polite"></p>
                     </div>
                 </div>
             </section>
 
-            <section style="margin-top: 80px;">
-                <h2 class="reveal">Common questions</h2>
-                <div class="grid">
-                    <div class="card reveal">
-                        <h3>Where can I download Open Cookie?</h3>
-                        <p>Not in the Solana dApp Store yet. We are preparing the release. Install links will appear on the homepage when the app is published.</p>
-                    </div>
-                    <div class="card reveal">
-                        <h3>What happens when I break a cookie?</h3>
-                        <p>You approve a Solana transaction that calls the Open Cookie program. The program updates your on-chain profile, may collect a small configured fee to the program treasury, and returns a message index. The readable text comes from messages bundled inside the Android app.</p>
-                    </div>
-                    <div class="card reveal">
-                        <h3>How many breaks per day?</h3>
-                        <p>The on-chain program enforces a daily limit (configured in program settings). When the limit is reached, you need to wait until the next day.</p>
-                    </div>
-                    <div class="card reveal">
-                        <h3>Does Open Cookie hold my funds?</h3>
-                        <p>No. It is non-custodial. Private keys remain in your wallet. You approve each transaction yourself through Mobile Wallet Adapter.</p>
-                    </div>
+            <section class="section" style="padding-bottom: 0;">
+                <div class="section-intro reveal">
+                    <span class="section-tag">Common questions</span>
+                    <h2 class="section-title">Product mechanics and expectations</h2>
+                    <p class="section-copy">
+                        OpenCookie is intentionally small. These answers reflect how the Android app and on-chain program actually work
+                    </p>
+                </div>
+                <div class="faq-grid">
+                    <article class="faq-card reveal">
+                        <h3>What is OpenCookie?</h3>
+                        <p>OpenCookie is a Solana Mobile dApp where you tap a fortune cookie, approve an on-chain transaction, and receive a short message. It is a small interactive ritual — not a horoscope, prediction service, or investment tool</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>How does opening a cookie work?</h3>
+                        <p>Connect through Seed Vault, tap the cookie, and approve the transaction. The app sends a <code>break_cookie</code> instruction to the OpenCookie Solana program. After confirmation, the program returns a message index and updates your on-chain profile counters. The app maps the index to a message from its bundled collection and displays it</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Why does OpenCookie use Solana?</h3>
+                        <p>Each cookie break is recorded on Solana through the OpenCookie program. Your wallet owns an on-chain profile that tracks how many cookies you have opened. Solana provides a transparent, non-custodial way to anchor the interaction without OpenCookie holding your keys or funds</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>What happens when I use OpenCookie for the first time?</h3>
+                        <p>If your wallet does not yet have an on-chain profile, the app bundles profile creation (<code>initialize_user</code>) and your first cookie break (<code>break_cookie</code>) into one transaction. You approve once in your wallet. After confirmation, your profile exists and your first message is revealed</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Why does the first interaction require additional SOL?</h3>
+                        <p>Creating your on-chain profile requires a one-time SOL deposit for Solana account rent — the cost of storing your profile account on the network. This is standard Solana account rent, not an OpenCookie service fee. The exact amount is shown in your wallet before you sign</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>What is the on-chain profile?</h3>
+                        <p>Your profile is a Solana account owned by the OpenCookie program, linked to your wallet. It stores your total cookie opens, how many you have opened today, and the last UTC day your counter was updated. You can view stats in the app and close the profile to recover the rent deposit</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>How often can I open a cookie?</h3>
+                        <p>The on-chain program enforces a daily limit configured in program settings (<code>max_calls_per_day</code>). The app reads this limit from the chain and shows your progress (for example, opens today vs. the daily maximum). When you reach the limit, you need to wait until the next UTC day</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Does OpenCookie hold my funds?</h3>
+                        <p>No. OpenCookie is non-custodial. On Seeker, private keys stay in Seed Vault. You approve every transaction yourself through the device's native wallet via Solana Mobile Wallet Adapter. OpenCookie prepares transaction payloads but cannot move funds without your signature</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Which wallet does OpenCookie use on Seeker?</h3>
+                        <p>On Seeker, connection and signing go through the built-in Seed Vault wallet only. Third-party wallet apps such as Phantom or Solflare are not used for OpenCookie on Seeker. OpenCookie talks to Seed Vault through Solana Mobile Wallet Adapter — your keys never leave the device</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Are there fees when I break a cookie?</h3>
+                        <p>Yes, in three separate categories: (1) Solana network transaction fees on every break; (2) a one-time account rent deposit when your profile is first created; (3) a program fee on each cookie break, set in on-chain configuration and transferred to the program treasury. The exact amount is defined on-chain and shown in Seed Vault before you sign</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Where do the messages come from?</h3>
+                        <p>The on-chain program selects a message index. The readable text comes from 1,000 short English messages bundled inside the Android app (<code>messages_en.json</code>). The blockchain does not store or generate the message text</p>
+                    </article>
+                    <article class="faq-card reveal">
+                        <h3>Where can I get the app?</h3>
+                        <p>Not yet. OpenCookie is still in development and is not listed in the Solana dApp Store. We are preparing the release for Seeker and other Solana Mobile devices. Install details will appear on this site when the app is published. See <a href="https://solanamobile.com/" target="_blank" rel="noopener noreferrer">solanamobile.com</a> for the ecosystem in the meantime</p>
+                    </article>
                 </div>
             </section>
         </div>
     </main>
 
-    <footer>
+    <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="copyright">
-                    &copy; <span id="current-year"></span> Open Cookie.
+            <div class="footer-shell">
+                <div class="footer-copy">
+                    <p>&copy; <span id="current-year"></span> Open Cookie.</p>
+                    <p>Support and product information for OpenCookie</p>
                 </div>
-                <div class="footer-links">
+                <div class="footer-links" aria-label="Footer">
                     <a href="index.html">Home</a>
                     <a href="privacy.html">Privacy Policy</a>
                     <a href="terms.html">Terms of Service</a>

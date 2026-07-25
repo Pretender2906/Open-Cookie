@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,12 +49,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opencookie.app.R
+import com.opencookie.app.domain.model.ProfilePresence
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.ui.components.CookiePhase
+import com.opencookie.app.ui.components.FirstLaunchOnboarding
 import com.opencookie.app.ui.components.FortuneCookieStage
 import com.opencookie.app.ui.components.FortunePaper
-import com.opencookie.app.ui.components.TapHintHand
+import com.opencookie.app.ui.components.ProfileCreationDialog
 import com.opencookie.app.ui.theme.CookieCreamDim
 import com.opencookie.app.ui.theme.OpenCookieBackground
 import com.opencookie.app.ui.theme.OpenCookieWordmark
@@ -65,7 +68,7 @@ private const val CrackHapticTailDelayMs = 64L
 private const val CookieHalvesOpenMs = 760L
 private const val PaperZoomLeadMs = 400L
 private const val PaperZoomMs = 2160
-private const val PaperTextDelayMs = 20L
+private const val PaperTextDelayMs = 1L
 private const val PaperTextFadeMs = 560
 private const val ResetUnlockDelayMs = 1000L
 
@@ -83,6 +86,26 @@ fun CookieScreen(
     var paperFocused by rememberSaveable { mutableStateOf(false) }
     var textVisible by rememberSaveable { mutableStateOf(false) }
     var resetEnabled by rememberSaveable { mutableStateOf(false) }
+    var onboardingDismissedInSession by rememberSaveable { mutableStateOf(false) }
+    var showProfileCreationDialog by rememberSaveable { mutableStateOf(false) }
+    var previousProfilePresence by remember { mutableStateOf<ProfilePresence?>(null) }
+
+    fun resetToIdleScreen() {
+        viewModel.dismissMessage()
+        phase = CookiePhase.IDLE
+        paperFocused = false
+        textVisible = false
+        resetEnabled = false
+    }
+
+    LaunchedEffect(uiState.profilePresence) {
+        val previous = previousProfilePresence
+        if (previous == ProfilePresence.Exists && uiState.profilePresence == ProfilePresence.NotExists) {
+            onboardingDismissedInSession = false
+            showProfileCreationDialog = false
+        }
+        previousProfilePresence = uiState.profilePresence
+    }
 
     LaunchedEffect(
         uiState.cookieMessage,
@@ -158,15 +181,30 @@ fun CookieScreen(
         label = "paper_text_reveal",
     )
 
-    val status = when (uiState.transactionState) {
-        TransactionState.Building -> stringResource(R.string.tx_status_building)
-        TransactionState.AwaitingSignature -> stringResource(R.string.tx_status_wallet)
-        is TransactionState.Confirming -> stringResource(R.string.tx_status_confirming)
-        TransactionState.Retrying -> stringResource(R.string.tx_status_retrying)
-        else -> if (!uiState.configLoaded) stringResource(R.string.chain_data_loading) else null
+    val status = when {
+        uiState.profilePresence == ProfilePresence.Checking ||
+            uiState.profilePresence == ProfilePresence.Unknown -> stringResource(R.string.chain_data_loading)
+        uiState.transactionState == TransactionState.Building -> stringResource(R.string.tx_status_building)
+        uiState.transactionState == TransactionState.AwaitingSignature -> stringResource(R.string.tx_status_wallet)
+        uiState.transactionState is TransactionState.Confirming -> stringResource(R.string.tx_status_confirming)
+        uiState.transactionState == TransactionState.Retrying -> stringResource(R.string.tx_status_retrying)
+        !uiState.configLoaded -> stringResource(R.string.chain_data_loading)
+        else -> null
     }
 
     val tappable = phase == CookiePhase.IDLE && uiState.buttonEnabled
+    val showFirstLaunchOnboarding =
+        phase == CookiePhase.IDLE &&
+            tappable &&
+            uiState.showFirstLaunchOnboarding &&
+            !onboardingDismissedInSession
+
+    val startCookieBreak = {
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        phase = CookiePhase.BREAKING
+        viewModel.breakCookie()
+    }
+
     val resetOpenedCookie = {
         viewModel.dismissMessage()
         phase = CookiePhase.IDLE
@@ -186,7 +224,10 @@ fun CookieScreen(
             ) {
                 Spacer(Modifier.size(30.dp))
                 OpenCookieWordmark(modifier = Modifier.weight(1f))
-                IconButton(onClick = onProfileClick) {
+                IconButton(onClick = {
+                    resetToIdleScreen()
+                    onProfileClick()
+                }) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
                         contentDescription = stringResource(R.string.profile_title),
@@ -202,44 +243,57 @@ fun CookieScreen(
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
-                FortuneCookieStage(
-                    phase = phase,
-                    tappable = tappable,
-                    paperFocusProgress = paperFocusProgress,
-                    onTap = {
-                        if (tappable) {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            viewModel.markTapHintSeen()
-                            phase = CookiePhase.BREAKING
-                            viewModel.breakCookie()
-                        }
-                    },
-                    modifier = stageModifier,
-                    paper = { paperModifier ->
-                        FortunePaper(
-                            message = uiState.cookieMessage,
-                            textRevealProgress = textReveal,
-                            modifier = paperModifier,
+                BoxWithConstraints(modifier = stageModifier) {
+                    FortuneCookieStage(
+                        phase = phase,
+                        tappable = tappable,
+                        paperFocusProgress = paperFocusProgress,
+                        onTap = {
+                            if (!tappable) return@FortuneCookieStage
+
+                            when (uiState.profilePresence) {
+                                ProfilePresence.NotExists -> {
+                                    onboardingDismissedInSession = true
+                                    showProfileCreationDialog = true
+                                }
+                                ProfilePresence.CheckFailed -> {
+                                    viewModel.retryProfileCheck()
+                                }
+                                ProfilePresence.Exists -> {
+                                    startCookieBreak()
+                                }
+                                ProfilePresence.Unknown,
+                                ProfilePresence.Checking,
+                                -> Unit
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        paper = { paperModifier ->
+                            FortunePaper(
+                                message = uiState.cookieMessage,
+                                textRevealProgress = textReveal,
+                                modifier = paperModifier,
+                            )
+                        },
+                    )
+
+                    if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null && resetEnabled) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = resetOpenedCookie,
+                                ),
                         )
-                    },
-                )
+                    }
 
-                if (phase == CookiePhase.REVEALED && uiState.cookieMessage != null && resetEnabled) {
-                    Box(
-                        modifier = stageModifier.clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = resetOpenedCookie,
-                        ),
-                    )
-                }
-
-                if (phase == CookiePhase.IDLE && uiState.showTapHint && tappable) {
-                    TapHintHand(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(top = 180.dp),
-                    )
+                    if (showFirstLaunchOnboarding) {
+                        FirstLaunchOnboarding(
+                            modifier = Modifier.matchParentSize(),
+                        )
+                    }
                 }
             }
 
@@ -247,6 +301,8 @@ fun CookieScreen(
                 phase = phase,
                 status = status,
                 tappable = tappable,
+                showFirstLaunchOnboarding = showFirstLaunchOnboarding,
+                profileCheckFailed = uiState.profilePresence == ProfilePresence.CheckFailed,
                 costSol = uiState.costSol,
                 error = uiState.error,
                 isOffline = uiState.isOffline,
@@ -257,8 +313,22 @@ fun CookieScreen(
                 resetEnabled = resetEnabled,
                 onOpenAnother = resetOpenedCookie,
                 onDismissError = { viewModel.dismissError() },
+                onRetryProfileCheck = { viewModel.retryProfileCheck() },
             )
         }
+    }
+
+    if (showProfileCreationDialog) {
+        ProfileCreationDialog(
+            onConfirm = {
+                showProfileCreationDialog = false
+                startCookieBreak()
+            },
+            onDismiss = {
+                showProfileCreationDialog = false
+                onboardingDismissedInSession = true
+            },
+        )
     }
 }
 
@@ -280,6 +350,8 @@ private fun BottomArea(
     phase: CookiePhase,
     status: String?,
     tappable: Boolean,
+    showFirstLaunchOnboarding: Boolean,
+    profileCheckFailed: Boolean,
     costSol: String?,
     error: String?,
     isOffline: Boolean,
@@ -290,6 +362,7 @@ private fun BottomArea(
     resetEnabled: Boolean,
     onOpenAnother: () -> Unit,
     onDismissError: () -> Unit,
+    onRetryProfileCheck: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -310,15 +383,17 @@ private fun BottomArea(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Text(
-                            text = stringResource(R.string.tap_the_cookie),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Normal,
-                                letterSpacing = 0.5.sp,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f),
-                            textAlign = TextAlign.Center,
-                        )
+                        if (!showFirstLaunchOnboarding) {
+                            Text(
+                                text = stringResource(R.string.tap_the_cookie),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Normal,
+                                    letterSpacing = 0.5.sp,
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                         costSol?.let {
                             Text(
                                 text = stringResource(R.string.cookie_cost, it),
@@ -342,6 +417,11 @@ private fun BottomArea(
             }
         }
 
+        if (profileCheckFailed && phase == CookiePhase.IDLE && error == null) {
+            StatusPill(text = stringResource(R.string.profile_check_failed), isError = true)
+            SubtleAction(text = stringResource(R.string.retry), onClick = onRetryProfileCheck)
+        }
+
         error?.let {
             StatusPill(text = it, isError = true)
             SubtleAction(text = stringResource(R.string.retry), onClick = onDismissError)
@@ -351,7 +431,7 @@ private fun BottomArea(
             StatusPill(text = stringResource(R.string.offline_banner), isError = true)
         }
 
-        if (configLoaded && error == null) {
+        if (configLoaded && error == null && !profileCheckFailed) {
             Text(
                 text = stringResource(R.string.cookie_stats_line, callsToday, maxCallsPerDay, totalCalls),
                 style = MaterialTheme.typography.labelSmall,

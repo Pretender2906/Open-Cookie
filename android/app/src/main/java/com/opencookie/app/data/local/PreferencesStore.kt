@@ -2,7 +2,6 @@ package com.opencookie.app.data.local
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.opencookie.app.domain.model.Cluster
@@ -70,12 +69,6 @@ class PreferencesStore @Inject constructor(
     suspend fun getNetworkFeePriority(): NetworkFeePriority =
         networkFeePriorityFlow().first()
 
-    fun cookieTapHintSeenFlow(): Flow<Boolean> =
-        dataStore.data.map { it[KEY_COOKIE_TAP_HINT_SEEN] ?: false }
-
-    suspend fun setCookieTapHintSeen() =
-        dataStore.edit { it[KEY_COOKIE_TAP_HINT_SEEN] = true }
-
     suspend fun clearWalletAuth() {
         dataStore.edit {
             it.remove(KEY_AUTH_TOKEN)
@@ -103,7 +96,6 @@ class PreferencesStore @Inject constructor(
         private val KEY_NETWORK_FEE_PRIORITY = stringPreferencesKey("network_fee_priority")
         private val KEY_LAST_GOOD_RPC_DEVNET = stringPreferencesKey("last_good_rpc_devnet")
         private val KEY_LAST_GOOD_RPC_MAINNET = stringPreferencesKey("last_good_rpc_mainnet")
-        private val KEY_COOKIE_TAP_HINT_SEEN = booleanPreferencesKey("cookie_tap_hint_seen")
 
         private fun lastGoodRpcKey(cluster: Cluster) = when (cluster) {
             Cluster.Devnet -> KEY_LAST_GOOD_RPC_DEVNET

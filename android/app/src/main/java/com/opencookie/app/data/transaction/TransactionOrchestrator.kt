@@ -10,6 +10,7 @@ import com.opencookie.app.data.wallet.WalletConnectionManager
 import com.opencookie.app.data.wallet.WalletFailureDiagnostics
 import com.opencookie.app.domain.model.AppError
 import com.opencookie.app.domain.model.PendingTransaction
+import com.opencookie.app.domain.model.ProfilePresence
 import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.domain.model.UserProfile
 import com.opencookie.app.domain.repository.ProfileRepository
@@ -107,6 +108,10 @@ class TransactionOrchestrator @Inject constructor(
                         appSession.removePendingTransaction(sent.signature)
                         if (action is Action.CloseUser) {
                             onUserClosedAfterTx()
+                        } else if (action is Action.BreakCookie) {
+                            if (!hadProfile) {
+                                appSession.markProfileCreatedLocally()
+                            }
                         } else {
                             profileRepository.fetchProfile(wallet)
                         }
@@ -114,12 +119,18 @@ class TransactionOrchestrator @Inject constructor(
                     }
                     ConfirmOutcome.Expired -> {
                         appSession.removePendingTransaction(sent.signature)
-                        if (!hadProfile) appSession.clearProfile()
+                        if (!hadProfile) {
+                            appSession.clearProfile()
+                            appSession.setProfilePresence(ProfilePresence.NotExists)
+                        }
                         emit(TransactionState.Failed(AppError.TransactionExpired))
                     }
                     is ConfirmOutcome.Error -> {
                         appSession.removePendingTransaction(sent.signature)
-                        if (!hadProfile) appSession.clearProfile()
+                        if (!hadProfile) {
+                            appSession.clearProfile()
+                            appSession.setProfilePresence(ProfilePresence.NotExists)
+                        }
                         emit(TransactionState.Failed(confirm.error))
                     }
                 }
@@ -250,6 +261,8 @@ class TransactionOrchestrator @Inject constructor(
     private suspend fun onUserClosedAfterTx() {
         blockhashCache.invalidate()
         appSession.clearProfile()
+        appSession.setProfilePresence(ProfilePresence.NotExists)
+        appSession.markProfileRefreshed()
         appSession.pruneStalePendingTransactions()
         val wallet = appSession.state.value.walletAddress ?: return
         profileRepository.fetchBalance(wallet)

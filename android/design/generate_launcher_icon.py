@@ -34,7 +34,14 @@ ESPRESSO_TOP = (0x1E, 0x15, 0x12)
 ESPRESSO_MID = (0x13, 0x0D, 0x0B)
 ESPRESSO_DEEP = (0x08, 0x06, 0x05)
 COOKIE_GOLD = (0xE4, 0xB8, 0x76)
-COOKIE_SCALE = 0.72
+COOKIE_SCALE = 0.90
+WEBSITE_COOKIE_SCALE = 1.05
+
+
+def cookie_scale_factor(cookie: Image.Image, target: int, fill: bool) -> float:
+    width_scale = target / cookie.width
+    height_scale = target / cookie.height
+    return max(width_scale, height_scale) if fill else min(width_scale, height_scale)
 
 
 def lerp(a: float, b: float, t: float) -> float:
@@ -49,11 +56,11 @@ def lerp_rgb(c1: tuple[int, int, int], c2: tuple[int, int, int], t: float) -> tu
     )
 
 
-def radial_background(size: int) -> Image.Image:
+def radial_background(size: int, *, tight: bool = False) -> Image.Image:
     img = Image.new("RGB", (size, size))
     px = img.load()
     center = (size - 1) / 2.0
-    max_r = size * 0.72
+    max_r = size * (0.58 if tight else 0.72)
     for y in range(size):
         for x in range(size):
             d = min(1.0, math.hypot(x - center, y - center) / max_r)
@@ -86,11 +93,17 @@ def load_cookie() -> Image.Image:
     return crop_to_content(Image.open(SRC_COOKIE).convert("RGBA"))
 
 
-def place_cookie(canvas_size: int, cookie: Image.Image) -> Image.Image:
-    target = int(canvas_size * COOKIE_SCALE)
-    scale = min(target / cookie.width, target / cookie.height)
+def place_cookie(
+    canvas_size: int,
+    cookie: Image.Image,
+    scale: float = COOKIE_SCALE,
+    *,
+    fill: bool = False,
+) -> Image.Image:
+    target = int(canvas_size * scale)
+    factor = cookie_scale_factor(cookie, target, fill)
     resized = cookie.resize(
-        (max(1, int(cookie.width * scale)), max(1, int(cookie.height * scale))),
+        (max(1, int(cookie.width * factor)), max(1, int(cookie.height * factor))),
         Image.Resampling.LANCZOS,
     )
     canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
@@ -100,9 +113,16 @@ def place_cookie(canvas_size: int, cookie: Image.Image) -> Image.Image:
     return canvas
 
 
-def compose_icon(size: int, cookie: Image.Image) -> Image.Image:
-    background = radial_background(size)
-    foreground = place_cookie(size, cookie)
+def compose_icon(
+    size: int,
+    cookie: Image.Image,
+    scale: float = COOKIE_SCALE,
+    *,
+    fill: bool = False,
+    tight_background: bool = False,
+) -> Image.Image:
+    background = radial_background(size, tight=tight_background)
+    foreground = place_cookie(size, cookie, scale, fill=fill)
     icon = background.convert("RGBA")
     icon.alpha_composite(foreground)
     return icon
@@ -130,7 +150,10 @@ def main() -> None:
         save_png(APP_RES / f"mipmap-{density}" / "ic_launcher.png", icon)
         save_png(APP_RES / f"mipmap-{density}" / "ic_launcher_round.png", icon)
 
-    save_png(WEBSITE_ICON, compose_icon(512, cookie))
+    save_png(
+        WEBSITE_ICON,
+        compose_icon(512, cookie, WEBSITE_COOKIE_SCALE, fill=True, tight_background=True),
+    )
     print("Launcher icons and website icon generated.")
 
 

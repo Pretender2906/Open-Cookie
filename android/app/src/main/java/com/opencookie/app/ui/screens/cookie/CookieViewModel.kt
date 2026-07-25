@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.opencookie.app.data.AppReadiness
 import com.opencookie.app.data.DataRefreshCoordinator
 import com.opencookie.app.data.CookieRepository
-import com.opencookie.app.data.local.PreferencesStore
 import com.opencookie.app.data.session.AppSession
 import com.opencookie.app.data.transaction.Action
 import com.opencookie.app.data.transaction.GlobalTransactionUi
@@ -14,9 +13,9 @@ import com.opencookie.app.data.transaction.TransactionRunner
 import com.opencookie.app.data.transaction.canStartTransaction
 import com.opencookie.app.data.wallet.ActivityResultSenderRegistry
 import com.opencookie.app.domain.model.AppError
+import com.opencookie.app.domain.model.ProfilePresence
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
-import com.opencookie.app.domain.model.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,7 +38,8 @@ data class CookieUiState(
     val isOffline: Boolean = false,
     val error: String? = null,
     val buttonEnabled: Boolean = false,
-    val showTapHint: Boolean = false,
+    val profilePresence: ProfilePresence = ProfilePresence.Unknown,
+    val showFirstLaunchOnboarding: Boolean = false,
     val costSol: String? = null,
 )
 
@@ -53,7 +53,6 @@ class CookieViewModel @Inject constructor(
     private val dataRefreshCoordinator: DataRefreshCoordinator,
     private val activityResultSenderRegistry: ActivityResultSenderRegistry,
     private val appReadiness: AppReadiness,
-    private val preferencesStore: PreferencesStore,
 ) : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
@@ -71,9 +70,9 @@ class CookieViewModel @Inject constructor(
         appSession.state,
         globalTransactionUi.state,
         cookieOpeningVisualState,
-        preferencesStore.cookieTapHintSeenFlow(),
-    ) { session, globalTx, visualState, tapHintSeen ->
+    ) { session, globalTx, visualState ->
         val profile = session.profile
+        val profileReady = session.isProfilePresenceKnown
         CookieUiState(
             callsToday = profile?.callsToday ?: 0,
             maxCallsPerDay = session.config?.maxCallsPerDay ?: 0,
@@ -87,12 +86,14 @@ class CookieViewModel @Inject constructor(
             isOffline = !session.isOnline,
             error = visualState.error,
             buttonEnabled = session.config != null &&
+                profileReady &&
                 !session.isTransactionInProgress &&
                 !transactionRunner.isActive &&
                 !visualState.cookieOpeningPending &&
                 activityResultSenderRegistry.current() != null &&
                 (profile == null || profile.callsToday < (session.config?.maxCallsPerDay ?: 0)),
-            showTapHint = !tapHintSeen,
+            profilePresence = session.profilePresence,
+            showFirstLaunchOnboarding = session.profilePresence == ProfilePresence.NotExists,
             costSol = session.config?.priceLamports?.let { formatSol(it) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CookieUiState())
@@ -113,6 +114,10 @@ class CookieViewModel @Inject constructor(
                     viewModelScope.launch {
                         val result = transactionOrchestrator.fetchBreakCookieResult(state.signature)
                         result.onSuccess { cookieResult ->
+                            appSession.applyBreakCookieStats(
+                                totalCalls = cookieResult.totalCalls,
+                                callsToday = cookieResult.callsToday,
+                            )
                             _cookieMessage.value = cookieRepository.cookieMessage(cookieResult.messageIndex)
                             _cookieOpeningPending.value = false
                         }.onFailure {
@@ -146,8 +151,10 @@ class CookieViewModel @Inject constructor(
         _cookieOpeningPending.value = false
     }
 
-    fun markTapHintSeen() {
-        viewModelScope.launch { preferencesStore.setCookieTapHintSeen() }
+    fun retryProfileCheck() {
+        viewModelScope.launch {
+            dataRefreshCoordinator.refreshNow(force = true)
+        }
     }
 
     private companion object {

@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Open Cookie — a minimal Solana Mobile dApp. Break the cookie on-chain and get a daily thought, tip, or small task. Currently in development.">
-    <title>Open Cookie — Daily Messages on Solana</title>
+    <meta name="description" content="OpenCookie is an interactive fortune-cookie experience for Solana Mobile. Connect your wallet, break a cookie on-chain, and reveal a short message.">
+    <title>OpenCookie — Break a Cookie on Solana Mobile</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="icon.png">
-    <link rel="alternate icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 </head>
 <body class="no-transition">
-    <header>
+    <header class="site-header">
         <div class="container">
-            <nav>
-                <a href="index.html" class="logo">
-                    <span class="logo-icon"></span>
-                    Open Cookie
+            <nav class="site-nav" aria-label="Primary">
+                <a href="index.html" class="brand" aria-current="page">
+                    <img src="icon.png" alt="" class="brand-mark" width="22" height="22">
+                    OPEN COOKIE
                 </a>
                 <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html" aria-current="page">Home</a></li>
                     <li><a href="support.html">Support</a></li>
                     <li><a href="privacy.html">Privacy</a></li>
                     <li><a href="terms.html">Terms</a></li>
@@ -30,90 +30,270 @@
         </div>
     </header>
 
-    <main>
+    <main class="site-main">
         <section class="hero">
             <div class="container">
-                <div class="cookie-container reveal">
-                    <div class="cookie-wrapper">
-                        <div class="cookie-glow"></div>
-                        <div class="cookie-body">
-                            <div class="cookie-star"></div>
+                <div class="hero-grid">
+                    <div class="hero-copy">
+                        <div class="eyebrow reveal">Solana Mobile dApp</div>
+                        <h1 class="wordmark reveal">OPEN COOKIE</h1>
+                        <p class="hero-lead reveal">
+                            Break a cookie<br>
+                            Receive a message
+                        </p>
+                        <div class="status-chip reveal">Coming soon to Solana dApp Store</div>
+                        <p class="hero-description reveal">
+                            OpenCookie is a small on-chain experience built for Solana Mobile. Connect your wallet, tap the cookie, approve the transaction, and reveal a short message — with your activity recorded on Solana.
+                        </p>
+                        <div class="hero-actions reveal">
+                            <a href="#get-the-app" class="button">Learn more</a>
+                            <a href="#how-it-works" class="button-ghost">How it works</a>
+                        </div>
+                        <p class="hero-note reveal">
+                            Not a horoscope or a prediction — a simple fortune-cookie moment on-chain
+                        </p>
+                    </div>
+
+                    <div class="hero-visual reveal">
+                        <button
+                            type="button"
+                            class="cookie-stage"
+                            id="hero-cookie"
+                            aria-label="Open the fortune cookie"
+                            data-cookie-stage
+                        >
+                            <span class="cookie-aura" aria-hidden="true"></span>
+
+                            <div class="paper-wrap" aria-hidden="true">
+                                <div class="paper-surface">
+                                    <img class="paper-image" src="assets/cookie/fortune_paper.png" alt="">
+                                    <div class="paper-message">
+                                        <span class="paper-message-text" data-cookie-message>
+                                            May your next pause feel a little softer
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <img class="cookie-image cookie-intact" src="assets/cookie/intact_cookie.png" alt="">
+                            <img class="cookie-image cookie-cracked" src="assets/cookie/cookie_broken_closed.png" alt="">
+                            <img class="cookie-image cookie-half cookie-half-left" src="assets/cookie/cookie_left_half.png" alt="">
+                            <img class="cookie-image cookie-half cookie-half-right" src="assets/cookie/cookie_right_half.png" alt="">
+
+                            <div class="crumb-layer" aria-hidden="true">
+                                <img class="crumb" src="assets/crumbs/crumb_01.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_02.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_03.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_04.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_05.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_06.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_07.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_08.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_09.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_10.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_11.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_12.png" alt="">
+                                <img class="crumb" src="assets/crumbs/crumb_13.png" alt="">
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="how-it-works">
+            <div class="container">
+                <div class="section-intro reveal">
+                    <span class="section-tag">How it works</span>
+                    <h2 class="section-title">Connect · Tap · Open · Discover</h2>
+                    <p class="section-copy">
+                        The flow is intentionally simple. Each step keeps the cookie, the gesture, and the message at the center
+                    </p>
+                </div>
+                <div class="process-grid process-grid--four">
+                    <article class="process-card reveal">
+                        <div class="process-figure" data-step="01"></div>
+                        <small>Connect</small>
+                        <h3>Link your Solana wallet</h3>
+                        <p>OpenCookie uses Solana Mobile Wallet Adapter. On Seeker, connection goes through the built-in Seed Vault wallet — your keys never leave the device</p>
+                    </article>
+                    <article class="process-card reveal">
+                        <div class="process-figure" data-step="02"></div>
+                        <small>Tap</small>
+                        <h3>Tap the cookie</h3>
+                        <p>Tap to break the cookie. On your first visit, the app also prepares your on-chain profile in the same transaction, so setup and your first opening happen together</p>
+                    </article>
+                    <article class="process-card reveal">
+                        <div class="process-figure" data-step="03"></div>
+                        <small>Open</small>
+                        <h3>Approve and reveal</h3>
+                        <p>Review the transaction in your wallet and sign. Once it confirms on Solana, the cookie opens and your message appears in the app</p>
+                    </article>
+                    <article class="process-card reveal">
+                        <div class="process-figure" data-step="04"></div>
+                        <small>Discover</small>
+                        <h3>Keep opening cookies</h3>
+                        <p>Return throughout the day to open more cookies, up to the daily limit set by the on-chain program. Your open count and stats are stored in your profile</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="surface-panel reveal">
+                    <div class="section-intro">
+                        <span class="section-tag">On-chain experience</span>
+                        <h2 class="section-title">Your interaction happens on Solana</h2>
+                        <p class="section-copy">
+                            OpenCookie uses a Solana program to record cookie breaks. The blockchain is part of the product — not decoration
+                        </p>
+                    </div>
+                    <div class="solana-points">
+                        <div class="solana-point">
+                            <strong>Every break is a transaction</strong>
+                            <p>When you open a cookie, the app sends a <code>break_cookie</code> instruction to the OpenCookie program. Your wallet approves it like any other Solana transaction.</p>
+                        </div>
+                        <div class="solana-point">
+                            <strong>Your profile tracks activity</strong>
+                            <p>Each wallet has an on-chain profile that stores how many cookies you have opened in total and how many you have opened today.</p>
+                        </div>
+                        <div class="solana-point">
+                            <strong>Non-custodial by design</strong>
+                            <p>OpenCookie never asks for your seed phrase. The app prepares transactions and sends them to your wallet for review and signature. We do not hold your funds</p>
                         </div>
                     </div>
                 </div>
-                <h1 class="reveal">Open Cookie</h1>
-                <p class="subtitle reveal">Break the cookie. Get a daily message on Solana.</p>
-                <p class="description reveal">
-                    A minimal Android dApp for Solana Mobile. Tap <strong>Break Cookie</strong>, approve the transaction in your wallet, and read a short thought, tip, or small task for the day.
-                </p>
-                <p class="description reveal" style="margin-top: -24px; font-size: 1.05rem;">
-                    Not a horoscope or a prediction — just a fortune cookie moment on-chain.
-                </p>
-                <div class="hero-btns reveal">
-                    <span class="badge-soon">Coming soon to Solana dApp Store</span>
-                </div>
-                <p class="store-note reveal">The app is in active development and not published yet. This page exists for wallet identity and project info.</p>
             </div>
         </section>
 
-        <section class="features">
+        <section class="section">
             <div class="container">
-                <h2 class="section-title reveal">How it works</h2>
-                <div class="steps">
-                    <div class="step reveal">
-                        <div class="step-num">1</div>
-                        <h3>Connect wallet</h3>
-                        <p>Open Cookie uses Solana Mobile Wallet Adapter. Your keys stay in Phantom, Solflare, or another wallet app you trust.</p>
+                <div class="solana-layout">
+                    <div class="surface-panel reveal">
+                        <div class="section-intro">
+                            <span class="section-tag">Your OpenCookie profile</span>
+                            <h2 class="section-title">Created on your first interaction</h2>
+                            <p class="section-copy">
+                                The first time you break a cookie, OpenCookie initializes an on-chain profile account for your wallet
+                            </p>
+                        </div>
+                        <div class="solana-points">
+                            <div class="solana-point">
+                                <strong>One-time account rent</strong>
+                                <p>Creating the profile requires a small SOL deposit for Solana account rent. This is standard network storage cost — not an additional OpenCookie service fee.</p>
+                            </div>
+                            <div class="solana-point">
+                                <strong>Combined into one step</strong>
+                                <p>On your first cookie, profile creation and the cookie break are bundled into a single transaction, so you only approve once.</p>
+                            </div>
+                            <div class="solana-point">
+                                <strong>Rent may be recoverable</strong>
+                                <p>You can close your profile from the app. When the account is closed, the rent deposit is returned to your wallet, subject to Solana network rules</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="step reveal">
-                        <div class="step-num">2</div>
-                        <h3>Break Cookie</h3>
-                        <p>Each break sends a <code>break_cookie</code> transaction to the Open Cookie program. You review and approve every transfer and fee in your wallet.</p>
-                    </div>
-                    <div class="step reveal">
-                        <div class="step-num">3</div>
-                        <h3>Read your message</h3>
-                        <p>The program returns a message index on-chain. The app maps it to one of 1000 short English messages stored locally on your device.</p>
-                    </div>
-                </div>
-
-                <div class="note-box reveal">
-                    Daily limit and optional program fee are set on-chain in program config. Network fees always apply. Limits reset per calendar day.
+                    <aside class="solana-aside reveal">
+                        <div class="quote-card">
+                            <p>
+                                “Not a prediction. Not advice. Just a small opening in the day.”
+                            </p>
+                            <span>OpenCookie</span>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </section>
 
-        <section class="features" style="padding-top: 0;">
+        <section class="section">
             <div class="container">
-                <h2 class="section-title reveal">What to expect</h2>
-                <div class="grid">
-                    <div class="card reveal">
-                        <div class="card-icon"><div class="card-icon-star"></div></div>
-                        <h3>Non-custodial</h3>
-                        <p>We never ask for your seed phrase. Open Cookie only builds transactions and sends them to your wallet for signature.</p>
+                <div class="surface-panel reveal">
+                    <div class="section-intro">
+                        <span class="section-tag">Messages</span>
+                        <h2 class="section-title">Short prompts, not predictions</h2>
+                        <p class="section-copy">
+                            Each cookie reveals a brief thought, reflection, or gentle nudge — meant to make the moment enjoyable, not to tell the future
+                        </p>
                     </div>
-                    <div class="card reveal">
-                        <div class="card-icon"><div class="card-icon-star"></div></div>
-                        <h3>No account sign-up</h3>
-                        <p>Your wallet address is enough. No email, username, or password inside the app.</p>
+                    <div class="what-grid">
+                        <div>
+                            <p class="section-copy">
+                                When you break a cookie, the on-chain program returns a message index. The Android app maps that index to one of 1,000 short English messages bundled inside the application.
+                            </p>
+                            <p class="section-copy">
+                                The message text is not generated on-chain and is not personalized server-side. It comes from the local message collection shipped with the app
+                            </p>
+                        </div>
+                        <div class="detail-stack">
+                            <article class="detail-item">
+                                <h3>Not fortune-telling</h3>
+                                <p>Messages are prompts for reflection or small actions — not horoscopes, predictions, or professional advice.</p>
+                            </article>
+                            <article class="detail-item">
+                                <h3>Index on-chain, text on-device</h3>
+                                <p>Solana records which message index you received. The readable text is resolved locally from the app bundle</p>
+                            </article>
+                        </div>
                     </div>
-                    <div class="card reveal">
-                        <div class="card-icon"><div class="card-icon-star"></div></div>
-                        <h3>Public on-chain activity</h3>
-                        <p>Breaks are normal Solana transactions. Your wallet address and on-chain profile data are visible on public explorers.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="get-the-app">
+            <div class="container">
+                <div class="ritual-panel reveal">
+                    <div class="section-intro">
+                        <span class="section-tag">Solana Mobile</span>
+                        <h2 class="section-title">Built for the Solana Mobile ecosystem</h2>
+                        <p class="section-copy">
+                            OpenCookie is designed for Solana Mobile devices — Seeker, Saga, and other phones with the Solana dApp Store installed
+                        </p>
+                    </div>
+                    <div class="ritual-grid">
+                        <article class="ritual-card">
+                            <small>Where to get it</small>
+                            <h3>Coming to the Solana dApp Store</h3>
+                            <p>OpenCookie is in active development and not published yet. When it launches, it will be available on Seeker and other Solana Mobile devices through the Solana dApp Store. The app will connect through Mobile Wallet Adapter to Seed Vault on Seeker</p>
+                            <p class="section-copy" style="margin-top: 14px;">
+                                <a href="https://solanamobile.com/" target="_blank" rel="noopener noreferrer">Learn more about Solana Mobile →</a>
+                            </p>
+                        </article>
+                        <article class="ritual-card">
+                            <small>What you need</small>
+                            <h3>Seed Vault and SOL</h3>
+                            <p>On Seeker, your Seed Vault wallet holds SOL for network fees, the program fee on each cookie break, and the one-time profile rent on your first cookie</p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="cta-panel reveal">
+                    <span class="section-tag">Coming soon</span>
+                    <h2>We're still building</h2>
+                    <p>
+                        OpenCookie is on its way to the Solana dApp Store. Until then, this page is home for the product, support, and legal information
+                    </p>
+                    <div class="hero-actions" style="justify-content: center;">
+                        <a href="support.html" class="button">Support</a>
+                        <a href="https://solanamobile.com/" class="button-ghost" target="_blank" rel="noopener noreferrer">Solana Mobile</a>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer>
+    <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="copyright">
-                    &copy; <span id="current-year"></span> Open Cookie. In development.
+            <div class="footer-shell">
+                <div class="footer-copy">
+                    <p>&copy; <span id="current-year"></span> Open Cookie.</p>
+                    <p>A fortune-cookie experience for Solana Mobile — in development</p>
                 </div>
-                <div class="footer-links">
+                <div class="footer-links" aria-label="Footer">
+                    <a href="index.html">Home</a>
                     <a href="privacy.html">Privacy Policy</a>
                     <a href="terms.html">Terms of Service</a>
                     <a href="support.html">Support</a>

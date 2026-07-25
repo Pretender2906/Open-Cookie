@@ -3,102 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Open Cookie</title>
+    <meta name="description" content="Privacy policy for OpenCookie, the Solana Mobile fortune-cookie experience.">
+    <title>Privacy Policy - OpenCookie</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 </head>
 <body class="no-transition">
-    <header>
+    <header class="site-header">
         <div class="container">
-            <nav>
-                <a href="index.html" class="logo">
-                    <span class="logo-icon"></span>
-                    Open Cookie
+            <nav class="site-nav" aria-label="Primary">
+                <a href="index.html" class="brand">
+                    <img src="icon.png" alt="" class="brand-mark" width="22" height="22">
+                    OPEN COOKIE
                 </a>
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="support.html">Support</a></li>
-                    <li><a href="privacy.html">Privacy</a></li>
+                    <li><a href="privacy.html" aria-current="page">Privacy</a></li>
                     <li><a href="terms.html">Terms</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <main class="content-page">
+    <main class="site-main content-page">
         <div class="container">
-            <h1 class="reveal">Privacy Policy</h1>
-            <p class="reveal" style="color: var(--text-muted); margin-bottom: 40px;">Effective Date: July 21, 2026</p>
-
-            <section class="reveal">
-                <h2>1. Information We Collect</h2>
-                <p>Open Cookie does not require users to provide personal information such as names, email addresses, or phone numbers. The application does not intentionally collect personal information from users. However, technical information such as IP addresses may be processed by third-party service providers necessary for the operation of the application, including wallet providers, RPC providers, and network infrastructure services.</p>
+            <section class="page-hero reveal">
+                <span class="section-tag">Privacy policy</span>
+                <h1 class="wordmark">OPEN COOKIE</h1>
+                <p>Effective Date: July 25, 2026</p>
             </section>
 
-            <section class="reveal">
-                <h2>2. Blockchain Data</h2>
-                <p>Blockchain transactions are public by nature. Any wallet address and transaction submitted to the Solana blockchain may be publicly visible through blockchain explorers and other third-party services. By using Open Cookie, you acknowledge that your interactions with the Solana network are transparent and public.</p>
-            </section>
-
-            <section class="reveal">
-                <h2>3. Non-Custodial Design</h2>
-                <p>Open Cookie is a non-custodial application. This means:</p>
-                <ul>
-                    <li>We <strong>do not store</strong> or have access to your private keys.</li>
-                    <li>We <strong>never</strong> ask for, store, or receive access to your seed phrase (recovery phrase).</li>
-                    <li>All digital assets remain in your control within your chosen wallet application.</li>
-                </ul>
-            </section>
-
-            <section class="reveal">
-                <h2>4. Solana Mobile Wallet Adapter</h2>
-                <p>Open Cookie utilizes the Solana Mobile Wallet Adapter (MWA) protocol to connect with your preferred mobile wallet. This protocol ensures that your private keys and signing processes remain within your trusted wallet application. Open Cookie only requests permission to submit transaction payloads to your wallet for review and signature.</p>
-            </section>
-
-            <section class="reveal">
-                <h2>5. Third-Party Services</h2>
-                <p>Open Cookie relies on third-party infrastructure including wallet applications, RPC providers, and the Solana blockchain network. These services operate independently and may have their own privacy policies. While Open Cookie is designed to operate securely, no software or blockchain network can guarantee absolute security. We recommend reviewing the privacy practices of any third-party services you interact with through our application.</p>
-            </section>
-
-            <section class="reveal">
-                <h2>6. Changes To This Policy</h2>
-                <p>This Privacy Policy may be updated from time to time. Changes will be reflected on this page with an updated effective date. We encourage users to periodically review this page for the latest information on our privacy practices.</p>
-            </section>
-
-            <section class="reveal">
-                <h2>7. Contact Information</h2>
-                <p>If you have any questions about this Privacy Policy, please contact us:</p>
-                <div class="contact-block">
-                    <label class="contact-label" for="privacy-email">Email</label>
-                    <input
-                        type="text"
-                        class="contact-email"
-                        id="privacy-email"
-                        value="opencookie.sol@gmail.com"
-                        readonly
-                        aria-label="Privacy contact email address"
-                        onclick="this.select()"
-                    >
-                    <div class="contact-actions">
-                        <a href="mailto:opencookie.sol@gmail.com" class="btn btn-secondary">Send email</a>
-                        <button type="button" class="btn btn-ghost" data-copy="#privacy-email">Copy address</button>
+            <section class="legal-card reveal">
+                <div class="legal-prose">
+                    <div class="legal-section">
+                        <h2>1. Scope</h2>
+                        <p>This Privacy Policy describes how the OpenCookie Android application handles information. It applies to the mobile app (<code>com.opencookie.app</code>). This website (<code>open-cookie.pages.dev</code>) is a separate static site; visiting it may load fonts from Google Fonts as described in your browser's network activity.</p>
                     </div>
-                    <p class="copy-feedback" aria-live="polite"></p>
+
+                    <div class="legal-section">
+                        <h2>2. Information We Do Not Collect</h2>
+                        <p>OpenCookie does not require you to create an account with us and does not ask for personal information such as your name, email address, or phone number. Based on the current application code and dependencies:</p>
+                        <ul>
+                            <li>We do <strong>not</strong> operate analytics SDKs (such as Firebase Analytics or Google Analytics).</li>
+                            <li>We do <strong>not</strong> operate crash-reporting services (such as Firebase Crashlytics or Sentry).</li>
+                            <li>We do <strong>not</strong> operate a proprietary backend server that receives user profiles or activity from the app.</li>
+                            <li>We do <strong>not</strong> collect advertising identifiers for tracking.</li>
+                        </ul>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>3. Non-Custodial Design</h2>
+                        <p>OpenCookie is a non-custodial application. This means:</p>
+                        <ul>
+                            <li>We <strong>do not store</strong> or have access to your private keys.</li>
+                            <li>We <strong>never</strong> ask for, store, or receive your seed phrase (recovery phrase).</li>
+                            <li>All digital assets remain in your control within Seed Vault on Seeker</li>
+                        </ul>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>4. Data Stored Locally on Your Device</h2>
+                        <p>The app uses Android DataStore (preferences) to persist session and connectivity state on your device. This may include:</p>
+                        <ul>
+                            <li>Your connected wallet public address</li>
+                            <li>Wallet authorization token and cluster metadata from Mobile Wallet Adapter</li>
+                            <li>Your selected Solana cluster (devnet or mainnet-beta)</li>
+                            <li>Pending transaction records (signature, action type, timestamps) for recovery after app restarts</li>
+                            <li>Your preferred network fee priority setting</li>
+                            <li>Last-known working RPC endpoint per cluster</li>
+                        </ul>
+                        <p>This data stays on your device unless you clear app storage or use the in-app disconnect/log out flow, which removes wallet session data.</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>5. Data That Leaves Your Device</h2>
+                        <p>OpenCookie communicates directly with the Solana network and Seed Vault on Seeker. Data that leaves your device includes:</p>
+                        <ul>
+                            <li><strong>Solana RPC requests:</strong> The app sends JSON-RPC requests to public Solana RPC endpoints (such as <code>api.mainnet-beta.solana.com</code> or configured alternatives). These requests include your wallet public key when querying accounts, balances, blockhashes, and transaction status. RPC providers may log IP addresses and request metadata under their own policies.</li>
+                            <li><strong>Signed transactions:</strong> When you approve an action, the signed transaction is submitted to the Solana network and becomes public blockchain data.</li>
+                            <li><strong>Mobile Wallet Adapter:</strong> Transaction payloads and authorization requests are passed to Seed Vault through the Solana Mobile Wallet Adapter protocol. OpenCookie does not receive your private keys through this process</li>
+                        </ul>
+                        <p>The app does not send wallet addresses or activity to an OpenCookie-operated server.</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>6. Blockchain Data</h2>
+                        <p>Blockchain transactions are public by nature. When you use OpenCookie, your wallet address, on-chain profile data (total opens, daily count), and transaction history may be visible through Solana block explorers and other third-party services. This data is recorded on the Solana blockchain and cannot be deleted or modified by OpenCookie after confirmation.</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>7. Solana Mobile Wallet Adapter</h2>
+                        <p>OpenCookie uses the Solana Mobile Wallet Adapter (MWA) protocol. On Seeker, signing happens inside Seed Vault — the device's native wallet. OpenCookie only requests permission to submit transaction payloads for your review and signature</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>8. Third-Party Services</h2>
+                        <p>OpenCookie relies on third-party infrastructure that operates independently:</p>
+                        <ul>
+                            <li><strong>Seed Vault on Seeker</strong> — the device's built-in wallet used for connection and transaction signing on Seeker devices</li>
+                            <li><strong>Solana RPC providers</strong> — used to read chain state and submit transactions.</li>
+                            <li><strong>The Solana blockchain</strong> — a public distributed ledger.</li>
+                        </ul>
+                        <p>We recommend reviewing the privacy practices of any third-party services you interact with through the app.</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>9. Device Permissions</h2>
+                        <p>OpenCookie uses standard Android network connectivity to reach Solana RPC endpoints and communicate with your wallet. The app observes network availability to show offline state and refresh data when connectivity returns. No location, contacts, camera, or microphone access is required for core functionality.</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>10. Changes To This Policy</h2>
+                        <p>This Privacy Policy may be updated from time to time. Changes will be reflected on this page with an updated effective date. We encourage users to periodically review this page for the latest information.</p>
+                    </div>
+
+                    <div class="legal-section">
+                        <h2>11. Contact Information</h2>
+                        <p>If you have any questions about this Privacy Policy, please contact us:</p>
+                        <div class="contact-block">
+                            <label class="contact-label" for="privacy-email">Email</label>
+                            <input
+                                type="text"
+                                class="contact-email"
+                                id="privacy-email"
+                                value="opencookie.sol@gmail.com"
+                                readonly
+                                aria-label="Privacy contact email address"
+                                onclick="this.select()"
+                            >
+                            <div class="contact-actions">
+                                <a href="mailto:opencookie.sol@gmail.com" class="button">Send email</a>
+                                <button type="button" class="button-ghost" data-copy="#privacy-email">Copy address</button>
+                            </div>
+                            <p class="copy-feedback" aria-live="polite"></p>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
     </main>
 
-    <footer>
+    <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="copyright">
-                    &copy; <span id="current-year"></span> Open Cookie.
+            <div class="footer-shell">
+                <div class="footer-copy">
+                    <p>&copy; <span id="current-year"></span> Open Cookie.</p>
+                    <p>Privacy details for the OpenCookie experience.</p>
                 </div>
-                <div class="footer-links">
+                <div class="footer-links" aria-label="Footer">
                     <a href="index.html">Home</a>
                     <a href="terms.html">Terms of Service</a>
                     <a href="support.html">Support</a>

@@ -3,6 +3,13 @@
     <string name="app_name">Open Cookie</string>
     <string name="cookie_title">OPEN COOKIE</string>
     <string name="tap_the_cookie">Tap the cookie</string>
+    <string name="first_launch_onboarding_title">Welcome to OpenCookie</string>
+    <string name="first_launch_onboarding_message">Tap the cookie to reveal your first message</string>
+    <string name="profile_create_confirm_title">One small step before your first cookie</string>
+    <string name="profile_create_confirm_message">To open your first cookie, we need to create your on-chain profile.\nThis requires a small amount of SOL for account rent.\nThe rent can be recovered when the account is closed.</string>
+    <string name="profile_create_confirm">Continue</string>
+    <string name="profile_create_cancel">Cancel</string>
+    <string name="profile_check_failed">Couldn\u2019t verify your profile — try again</string>
     <string name="cookie_cost">%1$s SOL</string>
     <string name="open_another">Open another</string>
     <string name="cookie_stats_line">Opened today %1$d/%2$d · %3$d total</string>
