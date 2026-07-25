@@ -84,12 +84,13 @@ function setupHeroCookie(prefersReducedMotion) {
         'Hope finds you in the smallest places too',
     ];
 
-    // Android: crumbs begin at CrackMomentMs + 18 (~740ms).
+    // Press/tension → crack → crumbs → broken-closed pause → halves open.
     // size is for tight-cropped PNGs (not full 1024×1536 canvases).
     // endX/endY = rest offsets from center; launch* = mid-flight apex.
-    const CRACK_MS = 740;
-    const OPEN_MS = 760;
-    const SETTLE_MS = 1450;
+    const CRACK_MS = 680;
+    const BROKEN_CLOSED_MS = 360;
+    const OPEN_MS = CRACK_MS + BROKEN_CLOSED_MS;
+    const SETTLE_MS = OPEN_MS + 840;
     const crumbScenarios = [
         [
             { launchX: -0.12, launchY: -0.06, endX: -0.26, endY: 0.28, r1: -84, r2: -40, s: 1.05, size: 0.038, d: 0 },
@@ -201,7 +202,7 @@ function setupHeroCookie(prefersReducedMotion) {
         isAnimating = true;
         clearSequenceTimers();
         clearCrumbs();
-        stage.classList.remove('is-breaking', 'is-open', 'is-settled');
+        stage.classList.remove('is-breaking', 'is-cracked', 'is-open', 'is-settled');
         void stage.offsetWidth;
         isOpen = false;
         isAnimating = false;
@@ -215,7 +216,7 @@ function setupHeroCookie(prefersReducedMotion) {
 
         clearSequenceTimers();
         clearCrumbs();
-        stage.classList.remove('is-breaking', 'is-open', 'is-settled');
+        stage.classList.remove('is-breaking', 'is-cracked', 'is-open', 'is-settled');
 
         currentScenario = nextScenarioIndex(currentScenario, crumbScenarios.length);
         const scenario = crumbScenarios[currentScenario];
@@ -230,7 +231,7 @@ function setupHeroCookie(prefersReducedMotion) {
         if (prefersReducedMotion) {
             schedule(() => {
                 stage.classList.remove('is-breaking');
-                stage.classList.add('is-open', 'is-settled');
+                stage.classList.add('is-cracked', 'is-open', 'is-settled');
                 settleCrumbsImmediately(scenario);
                 isOpen = true;
                 updateStageLabel();
@@ -240,8 +241,9 @@ function setupHeroCookie(prefersReducedMotion) {
             return;
         }
 
-        // Crumbs only after the crack moment — not during the press/pre-crack.
+        // Crack + crumbs together — not after halves start moving.
         schedule(() => {
+            stage.classList.add('is-cracked');
             animateCrumbs(scenario);
         }, CRACK_MS);
 
@@ -314,31 +316,36 @@ function setupHeroCookie(prefersReducedMotion) {
             if (!crumb) return;
 
             const sizePx = Math.max(8, minSide * spec.size);
-            const startX = width * spec.launchX * 0.15;
-            const startY = height * spec.launchY * 0.15;
+            const startX = width * spec.launchX * 0.1;
+            const startY = height * spec.launchY * 0.1;
             const launchX = width * spec.launchX;
             const launchY = height * spec.launchY;
             const endX = width * spec.endX;
             // Extra drop: web stage keeps crumbs mid-cookie at Android touchY alone.
             const endY = height * (spec.endY + 0.16);
+            const delay = (spec.d || 0) + (index % 4) * 14 + Math.floor(index / 5) * 10;
+            const duration = spec.dur || Math.round(400 + ((index * 53 + delay * 2) % 260));
+            const apexOffset = 0.16 + (index % 5) * 0.05;
+            const landOffset = 0.68 + (index % 6) * 0.045;
+            const bounceLift = minSide * (0.018 + (index % 3) * 0.008);
 
             prepareCrumb(crumb, sizePx);
 
             const animation = crumb.animate([
                 {
-                    opacity: 0,
-                    transform: `translate(${startX}px, ${startY}px) rotate(0deg) scale(${spec.s * 0.7})`,
+                    opacity: 0.9,
+                    transform: `translate(${startX}px, ${startY}px) rotate(${spec.r1 * 0.12}deg) scale(${spec.s * 0.78})`,
                     offset: 0,
                 },
                 {
                     opacity: 1,
                     transform: `translate(${launchX}px, ${launchY}px) rotate(${spec.r1}deg) scale(${spec.s})`,
-                    offset: 0.28,
+                    offset: apexOffset,
                 },
                 {
                     opacity: 1,
-                    transform: `translate(${endX}px, ${endY - minSide * 0.03}px) rotate(${spec.r2 + 6}deg) scale(${spec.s})`,
-                    offset: 0.72,
+                    transform: `translate(${endX}px, ${endY - bounceLift}px) rotate(${spec.r2 + 5}deg) scale(${spec.s})`,
+                    offset: landOffset,
                 },
                 {
                     opacity: 0.95,
@@ -346,9 +353,9 @@ function setupHeroCookie(prefersReducedMotion) {
                     offset: 1,
                 },
             ], {
-                duration: 900,
-                delay: spec.d,
-                easing: 'cubic-bezier(0.2, 0.82, 0.24, 1)',
+                duration,
+                delay,
+                easing: 'linear',
                 fill: 'forwards',
             });
 

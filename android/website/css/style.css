@@ -425,7 +425,21 @@ code {
     animation: idleFloat 4.6s ease-in-out infinite;
 }
 
-.cookie-stage.is-breaking .cookie-intact,
+.cookie-stage.is-breaking:not(.is-cracked) .cookie-intact {
+    animation: breakPress 680ms cubic-bezier(0.22, 0.86, 0.28, 1) forwards;
+}
+
+.cookie-stage.is-breaking.is-cracked:not(.is-open):not(.is-settled) .cookie-intact {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px) scale(0.985);
+    animation: none;
+    transition:
+        opacity 140ms ease,
+        transform 180ms ease,
+        visibility 0ms linear 140ms;
+}
+
 .cookie-stage.is-open .cookie-intact,
 .cookie-stage.is-settled .cookie-intact {
     opacity: 0;
@@ -449,10 +463,10 @@ code {
         visibility 0ms linear 200ms;
 }
 
-.cookie-stage.is-breaking .cookie-cracked {
+.cookie-stage.is-breaking.is-cracked:not(.is-open):not(.is-settled) .cookie-cracked {
     opacity: 1;
     visibility: visible;
-    animation: crackPulse 760ms cubic-bezier(0.2, 0.88, 0.24, 1) forwards;
+    animation: crackPulse 340ms cubic-bezier(0.2, 0.88, 0.24, 1) forwards;
     transition:
         opacity 160ms ease,
         transform 360ms ease,
@@ -1107,18 +1121,45 @@ code {
     }
 }
 
+@keyframes breakPress {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+    14% {
+        transform: translateY(3px) scale(1.012, 0.964) rotate(-0.6deg);
+    }
+    28% {
+        transform: translateY(2px) scale(1.006, 0.972) rotate(0.8deg);
+    }
+    42% {
+        transform: translateY(2px) scale(1.008, 0.968) rotate(-0.7deg);
+    }
+    56% {
+        transform: translateY(1px) scale(1.004, 0.974) rotate(0.5deg);
+    }
+    70% {
+        transform: translateY(2px) scale(1.007, 0.97) rotate(-0.4deg);
+    }
+    84% {
+        transform: translateY(1px) scale(1.005, 0.972) rotate(0.35deg);
+    }
+    100% {
+        transform: translateY(3px) scale(1.002, 0.966) rotate(0deg);
+    }
+}
+
 @keyframes crackPulse {
     0% {
-        transform: scale(0.98) rotate(0deg);
+        transform: scale(0.985) rotate(0deg);
     }
-    22% {
-        transform: scale(0.975) rotate(-2deg);
+    24% {
+        transform: scale(0.978) rotate(-2.4deg);
     }
-    48% {
-        transform: scale(1.012) rotate(2deg);
+    52% {
+        transform: scale(1.018) rotate(2.2deg);
     }
-    72% {
-        transform: scale(1.006) rotate(-1deg);
+    78% {
+        transform: scale(1.008) rotate(-1deg);
     }
     100% {
         transform: scale(1.01) rotate(0deg);
