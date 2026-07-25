@@ -42,6 +42,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,10 +52,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.annotation.StringRes
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opencookie.app.BuildConfig
 import com.opencookie.app.R
+import com.opencookie.app.domain.model.AppLanguage
 import com.opencookie.app.domain.model.NetworkFeePriority
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.ui.components.AppMessage
@@ -69,6 +76,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showLanguagePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel) {
         viewModel.logoutCompleted.collect {
@@ -263,6 +271,14 @@ fun ProfileScreen(
                     onSelected = viewModel::setNetworkFeePriority,
                 )
 
+                Spacer(Modifier.height(24.dp))
+                LanguageSelector(
+                    selected = uiState.appLanguage,
+                    enabled = !uiState.isLoggingOut && !uiState.isClosingProfile &&
+                        !uiState.isTransactionInProgress && !uiState.hasPendingTransactions,
+                    onClick = { showLanguagePicker = true },
+                )
+
                 Spacer(Modifier.height(32.dp))
                 Text(
                     text = stringResource(R.string.profile_cookie_stats),
@@ -313,6 +329,17 @@ fun ProfileScreen(
             onDismiss = { viewModel.dismissCloseProfileDialog() },
         )
     }
+
+    if (showLanguagePicker) {
+        LanguagePickerDialog(
+            selected = uiState.appLanguage,
+            onSelect = { language ->
+                viewModel.setAppLanguage(language)
+                showLanguagePicker = false
+            },
+            onDismiss = { showLanguagePicker = false },
+        )
+    }
 }
 
 @Composable
@@ -335,6 +362,106 @@ private fun ProfileRow(label: String, value: String) {
             color = MaterialTheme.colorScheme.primary,
         )
     }
+}
+
+@Composable
+private fun LanguageSelector(
+    selected: AppLanguage,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    ) {
+        ProfileRow(
+            label = stringResource(R.string.profile_language_title),
+            value = stringResource(selected.labelRes()),
+        )
+    }
+}
+
+@Composable
+private fun LanguagePickerDialog(
+    selected: AppLanguage,
+    onSelect: (AppLanguage) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 28.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.98f),
+            shadowElevation = 18.dp,
+        ) {
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                Text(
+                    text = stringResource(R.string.profile_language_picker_title),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                )
+                AppLanguage.entries.forEach { language ->
+                    val isSelected = language == selected
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(language) }
+                            .background(
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                } else {
+                                    Color.Transparent
+                                },
+                            )
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(language.labelRes()),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            ),
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
+                    }
+                    if (language != AppLanguage.entries.last()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@StringRes
+private fun AppLanguage.labelRes(): Int = when (this) {
+    AppLanguage.SystemDefault -> R.string.profile_language_system_default
+    AppLanguage.English -> R.string.profile_language_english
+    AppLanguage.Ukrainian -> R.string.profile_language_ukrainian
+    AppLanguage.Spanish -> R.string.profile_language_spanish
+    AppLanguage.ChineseSimplified -> R.string.profile_language_chinese
 }
 
 @Composable

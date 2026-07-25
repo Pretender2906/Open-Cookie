@@ -125,7 +125,7 @@ class ConnectWalletViewModel @Inject constructor(
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isSyncing = false,
-                    error = "Failed to sync with blockchain.",
+                    error = "Failed to sync with blockchain",
                 )
                 return@launch
             }

@@ -3,6 +3,7 @@ package com.opencookie.app.ui.screens.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opencookie.app.data.DataRefreshCoordinator
+import com.opencookie.app.data.local.AppLocaleManager
 import com.opencookie.app.data.local.PreferencesStore
 import com.opencookie.app.data.session.AppSession
 import com.opencookie.app.data.transaction.Action
@@ -11,6 +12,7 @@ import com.opencookie.app.data.transaction.TransactionRunner
 import com.opencookie.app.data.transaction.canStartTransaction
 import com.opencookie.app.data.wallet.ActivityResultSenderRegistry
 import com.opencookie.app.data.wallet.WalletConnectionManager
+import com.opencookie.app.domain.model.AppLanguage
 import com.opencookie.app.domain.model.AppError
 import com.opencookie.app.domain.model.ChainSyncState
 import com.opencookie.app.domain.model.NetworkFeePriority
@@ -38,6 +40,7 @@ data class ProfileUiState(
     val totalCalls: Long = 0,
     val clusterName: String = "",
     val networkFeePriority: NetworkFeePriority = NetworkFeePriority.Standard,
+    val appLanguage: AppLanguage = AppLanguage.SystemDefault,
     val hasProfile: Boolean = false,
     val isLoggingOut: Boolean = false,
     val isClosingProfile: Boolean = false,
@@ -58,6 +61,7 @@ class ProfileViewModel @Inject constructor(
     private val walletManager: WalletConnectionManager,
     private val activityResultSenderRegistry: ActivityResultSenderRegistry,
     private val preferencesStore: PreferencesStore,
+    private val appLocaleManager: AppLocaleManager,
     private val transactionRunner: TransactionRunner,
     private val dataRefreshCoordinator: DataRefreshCoordinator,
 ) : ViewModel() {
@@ -69,6 +73,8 @@ class ProfileViewModel @Inject constructor(
     private val _isSuccess = MutableStateFlow(false)
     private val _logoutCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val logoutCompleted: SharedFlow<Unit> = _logoutCompleted.asSharedFlow()
+
+    private val _appLanguage = MutableStateFlow(appLocaleManager.getCurrentLanguage())
 
     private data class ProfileFlags(
         val isLoggingOut: Boolean,
@@ -84,7 +90,8 @@ class ProfileViewModel @Inject constructor(
         },
         combine(_message, _isSuccess) { message, isSuccess -> message to isSuccess },
         preferencesStore.networkFeePriorityFlow(),
-    ) { session, globalTx, flags, messageUi, networkFeePriority ->
+        _appLanguage,
+    ) { session, globalTx, flags, messageUi, networkFeePriority, appLanguage ->
         val (message, isSuccess) = messageUi
         val balanceSol = "%.4f".format(session.balanceLamports / 1_000_000_000.0)
         val balanceKnown = session.lastRefreshMs > 0L
@@ -103,6 +110,7 @@ class ProfileViewModel @Inject constructor(
             totalCalls = session.profile?.totalCalls ?: 0,
             clusterName = session.cluster.cluster.name,
             networkFeePriority = networkFeePriority,
+            appLanguage = appLanguage,
             hasProfile = session.profile != null,
             isLoggingOut = flags.isLoggingOut,
             isClosingProfile = flags.isClosingProfile,
@@ -194,6 +202,12 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesStore.saveNetworkFeePriority(priority)
         }
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        if (language == _appLanguage.value) return
+        _appLanguage.value = language
+        appLocaleManager.applyLanguage(language)
     }
 
     private fun showError(text: String) {

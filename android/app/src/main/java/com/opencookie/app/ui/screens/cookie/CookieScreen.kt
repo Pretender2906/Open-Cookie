@@ -121,6 +121,14 @@ fun CookieScreen(
             uiState.hasActiveCookieTransaction() && phase == CookiePhase.IDLE -> {
                 phase = CookiePhase.WAITING_FOR_TRANSACTION
             }
+            !uiState.hasActiveCookieTransaction() &&
+                uiState.cookieMessage == null &&
+                (
+                    phase == CookiePhase.BREAKING ||
+                        phase == CookiePhase.WAITING_FOR_TRANSACTION
+                    ) -> {
+                phase = CookiePhase.IDLE
+            }
         }
     }
     LaunchedEffect(phase) {

@@ -2,6 +2,7 @@ package com.opencookie.app
 
 import android.app.Application
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import com.opencookie.app.data.AppReadiness
 import com.opencookie.app.data.DataRefreshCoordinator
 import com.opencookie.app.data.cluster.ClusterManager
@@ -34,6 +35,7 @@ class OpenCookieApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppCompatDelegate.setApplicationLocales(AppCompatDelegate.getApplicationLocales())
         // Online flag before any RPC refresh.
         connectivityObserver.hashCode()
 

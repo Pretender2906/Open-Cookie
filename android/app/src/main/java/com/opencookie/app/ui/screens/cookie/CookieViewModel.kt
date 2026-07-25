@@ -106,7 +106,11 @@ class CookieViewModel @Inject constructor(
     }
 
     fun breakCookie() {
-        if (!canStartTransaction(appSession, transactionRunner)) return
+        if (!canStartTransaction(appSession, transactionRunner)) {
+            _error.value = AppError.TransactionInProgress.userMessage
+            _cookieOpeningPending.value = false
+            return
+        }
         _error.value = null
         val started = transactionRunner.launch(Action.BreakCookie, TransactionOrigin.BreakCookie) { state ->
             when (state) {
