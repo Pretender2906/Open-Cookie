@@ -1,26 +1,26 @@
 [
     {
-        "relation":  [
-                         "delegate_permission/common.handle_all_urls"
-                     ],
-        "target":  {
-                       "namespace":  "android_app",
-                       "package_name":  "com.opencookie.app",
-                       "sha256_cert_fingerprints":  [
-                                                        "1D:1D:89:2B:EC:06:75:69:58:69:6C:FD:64:15:20:1E:78:65:60:CD:30:73:D8:F6:C4:3C:1C:7F:76:ED:5C:97"
-                                                    ]
-                   }
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.opencookie.app",
+            "sha256_cert_fingerprints": [
+                "1D:1D:89:2B:EC:06:75:69:58:69:6C:FD:64:15:20:1E:78:65:60:CD:30:73:D8:F6:C4:3C:1C:7F:76:ED:5C:97"
+            ]
+        }
     },
     {
-        "relation":  [
-                         "delegate_permission/common.handle_all_urls"
-                     ],
-        "target":  {
-                       "namespace":  "android_app",
-                       "package_name":  "com.opencookie.admin",
-                       "sha256_cert_fingerprints":  [
-                                                        "1D:1D:89:2B:EC:06:75:69:58:69:6C:FD:64:15:20:1E:78:65:60:CD:30:73:D8:F6:C4:3C:1C:7F:76:ED:5C:97"
-                                                    ]
-                   }
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.opencookie.admin",
+            "sha256_cert_fingerprints": [
+                "1D:1D:89:2B:EC:06:75:69:58:69:6C:FD:64:15:20:1E:78:65:60:CD:30:73:D8:F6:C4:3C:1C:7F:76:ED:5C:97"
+            ]
+        }
     }
 ]

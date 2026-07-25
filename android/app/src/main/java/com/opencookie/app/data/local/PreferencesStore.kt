@@ -69,6 +69,12 @@ class PreferencesStore @Inject constructor(
     suspend fun getNetworkFeePriority(): NetworkFeePriority =
         networkFeePriorityFlow().first()
 
+    suspend fun getMwaIdentityIconVersion(): String? =
+        dataStore.data.map { it[KEY_MWA_IDENTITY_ICON_VERSION] }.first()
+
+    suspend fun saveMwaIdentityIconVersion(version: String) =
+        dataStore.edit { it[KEY_MWA_IDENTITY_ICON_VERSION] = version }
+
     suspend fun clearWalletAuth() {
         dataStore.edit {
             it.remove(KEY_AUTH_TOKEN)
@@ -94,6 +100,7 @@ class PreferencesStore @Inject constructor(
         private val KEY_CLUSTER = stringPreferencesKey("cluster")
         private val KEY_PENDING_TXS = stringPreferencesKey("pending_txs")
         private val KEY_NETWORK_FEE_PRIORITY = stringPreferencesKey("network_fee_priority")
+        private val KEY_MWA_IDENTITY_ICON_VERSION = stringPreferencesKey("mwa_identity_icon_version")
         private val KEY_LAST_GOOD_RPC_DEVNET = stringPreferencesKey("last_good_rpc_devnet")
         private val KEY_LAST_GOOD_RPC_MAINNET = stringPreferencesKey("last_good_rpc_mainnet")
 

@@ -105,6 +105,8 @@ if (-not (Test-Path $outputDir)) {
 }
 
 $json = ($entries | ConvertTo-Json -Depth 6) -replace '\\u0026', '&'
+# PowerShell collapses single-element arrays into strings; DAL requires a JSON array.
+$json = $json -replace '"sha256_cert_fingerprints":\s*"([^"]+)"', '"sha256_cert_fingerprints": ["$1"]'
 [System.IO.File]::WriteAllText($Output, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host ""

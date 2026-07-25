@@ -1,6 +1,7 @@
 package com.opencookie.admin.di
 
 import androidx.core.net.toUri
+import com.opencookie.admin.data.wallet.DAppIdentity
 import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import dagger.Module
@@ -17,9 +18,9 @@ object WalletModule {
     fun provideMobileWalletAdapter(): MobileWalletAdapter =
         MobileWalletAdapter(
             connectionIdentity = ConnectionIdentity(
-                identityUri = "https://open-cookie.pages.dev".toUri(),
-                iconUri = "icon.png".toUri(),
-                identityName = "Open Cookie Admin",
+                identityUri = DAppIdentity.IDENTITY_URI.toUri(),
+                iconUri = DAppIdentity.ICON_RELATIVE.toUri(),
+                identityName = DAppIdentity.IDENTITY_NAME,
             ),
         )
 }

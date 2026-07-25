@@ -4,6 +4,7 @@ import android.net.Uri
 import com.opencookie.app.BuildConfig
 import com.opencookie.app.data.local.PendingTransactionCodec
 import com.opencookie.app.data.local.PreferencesStore
+import com.opencookie.app.data.wallet.DAppIdentity
 import com.opencookie.app.domain.model.Cluster
 import com.opencookie.app.domain.model.ClusterConfig
 import com.opencookie.app.domain.model.ClusterDefaults
@@ -208,6 +209,14 @@ class AppSession @Inject constructor(
             (walletAuthCluster == null || walletAuthCluster != currentClusterName)
         ) {
             authToken = null
+        }
+
+        val storedIconVersion = preferencesStore.getMwaIdentityIconVersion()
+        if (storedIconVersion != DAppIdentity.ICON_VERSION) {
+            if (authToken != null) {
+                authToken = null
+            }
+            preferencesStore.saveMwaIdentityIconVersion(DAppIdentity.ICON_VERSION)
         }
 
         val walletPubkey = walletStr?.let { runCatching { PublicKey(it) }.getOrNull() }
