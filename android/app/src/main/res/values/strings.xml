@@ -60,5 +60,42 @@
     <string name="profile_language_ukrainian">Українська</string>
     <string name="profile_language_spanish">Español</string>
     <string name="profile_language_chinese">简体中文</string>
+
+    <!-- Errors -->
+    <string name="error_network_unavailable">No internet connection</string>
+    <string name="error_rpc_with_detail">Network error (%1$s)</string>
+    <string name="error_rpc_generic">Network error, please try again</string>
+    <string name="error_rpc_timeout">Request timed out, please retry</string>
+    <string name="error_wallet_rejected">Wallet request declined or session expired</string>
+    <string name="error_wallet_not_found">No wallet app found</string>
+    <string name="error_wallet_disconnected">Wallet disconnected</string>
+    <string name="error_wallet_signing_interrupted">Wallet signing interrupted — keep the wallet open until approval completes</string>
+    <string name="error_wallet_connect_timeout">Wallet connect timed out — open your wallet app and approve the request</string>
+    <string name="error_wallet_activity_unavailable">App screen unavailable — reopen Open Cookie and try again</string>
+    <string name="error_wallet_cluster_mismatch_debug">Wallet session was on another network — open Profile, log out, reconnect on Devnet</string>
+    <string name="error_wallet_cluster_mismatch_release">App and wallet are on different networks — set your wallet to Mainnet, then try again</string>
+    <string name="error_config_not_loaded">Chain data still loading — please wait a moment</string>
+    <string name="error_blockhash_expired">Transaction stale — tap again</string>
+    <string name="error_transaction_simulation_failed">Transaction simulation failed</string>
+    <string name="error_transaction_expired">Network didn\u2019t confirm in time — tap to try again</string>
+    <string name="error_transaction_in_progress">Another transaction is in progress</string>
+    <string name="error_profile_not_found">Profile not found on-chain</string>
+    <string name="error_unknown">Something went wrong</string>
+    <string name="error_daily_limit_reached">Daily limit reached — come back tomorrow</string>
+    <string name="error_unauthorized">Unauthorized</string>
+    <string name="error_invalid_pda">Invalid PDA</string>
+    <string name="error_program_generic">Transaction failed (code %1$d)</string>
+
+    <string name="error_connection_failed">Connection failed</string>
+    <string name="error_sync_failed">Failed to sync with blockchain</string>
+    <string name="error_read_cookie_failed">Could not read cookie message</string>
+    <string name="error_reveal_message_failed">Failed to reveal message</string>
+    <string name="error_blockchain_generic">Blockchain error</string>
+
+    <string name="address_copied">Address copied</string>
+    <string name="profile_closed_success">Profile closed. Rent returned to your wallet.</string>
+    <string name="profile_build_version">Build %1$s</string>
+    <string name="cookie_fallback_message">Your cookie is waiting.</string>
+
     <string name="asset_statements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://open-cookie.pages.dev\" } }]</string>
 </resources>

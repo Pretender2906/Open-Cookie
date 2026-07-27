@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.opencookie.app.R
 
 @Composable
 fun WalletChip(
@@ -30,7 +31,7 @@ fun WalletChip(
         modifier = modifier.clickable {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("wallet", address))
-            Toast.makeText(context, "Address copied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.address_copied), Toast.LENGTH_SHORT).show()
         },
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.secondaryContainer,

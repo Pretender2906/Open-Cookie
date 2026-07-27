@@ -1,5 +1,6 @@
 package com.opencookie.app.ui.screens.cookie
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.CubicBezierEasing
@@ -60,6 +61,7 @@ import com.opencookie.app.ui.components.ProfileCreationDialog
 import com.opencookie.app.ui.theme.CookieCreamDim
 import com.opencookie.app.ui.theme.OpenCookieBackground
 import com.opencookie.app.ui.theme.OpenCookieWordmark
+import com.opencookie.app.util.UiText
 import kotlinx.coroutines.delay
 
 private const val BreakAnimationMs = 1440L
@@ -91,11 +93,17 @@ fun CookieScreen(
     var previousProfilePresence by remember { mutableStateOf<ProfilePresence?>(null) }
 
     fun resetToIdleScreen() {
+        viewModel.cancelTransaction()
         viewModel.dismissMessage()
+        viewModel.dismissError()
         phase = CookiePhase.IDLE
         paperFocused = false
         textVisible = false
         resetEnabled = false
+    }
+
+    BackHandler(enabled = phase != CookiePhase.IDLE) {
+        resetToIdleScreen()
     }
 
     LaunchedEffect(uiState.profilePresence) {
@@ -118,7 +126,9 @@ fun CookieScreen(
         when {
             uiState.error != null -> phase = CookiePhase.IDLE
             uiState.cookieMessage != null && phase != CookiePhase.BREAKING -> phase = CookiePhase.REVEALED
-            uiState.hasActiveCookieTransaction() && phase == CookiePhase.IDLE -> {
+            uiState.hasActiveCookieTransaction() &&
+                uiState.transactionState != TransactionState.Idle &&
+                phase == CookiePhase.IDLE -> {
                 phase = CookiePhase.WAITING_FOR_TRANSACTION
             }
             !uiState.hasActiveCookieTransaction() &&
@@ -361,7 +371,7 @@ private fun BottomArea(
     showFirstLaunchOnboarding: Boolean,
     profileCheckFailed: Boolean,
     costSol: String?,
-    error: String?,
+    error: UiText?,
     isOffline: Boolean,
     callsToday: Int,
     maxCallsPerDay: Int,
@@ -431,7 +441,7 @@ private fun BottomArea(
         }
 
         error?.let {
-            StatusPill(text = it, isError = true)
+            StatusPill(text = it.asString(), isError = true)
             SubtleAction(text = stringResource(R.string.retry), onClick = onDismissError)
         }
 

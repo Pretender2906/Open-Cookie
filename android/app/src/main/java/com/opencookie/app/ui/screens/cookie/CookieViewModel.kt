@@ -2,6 +2,7 @@ package com.opencookie.app.ui.screens.cookie
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opencookie.app.R
 import com.opencookie.app.data.AppReadiness
 import com.opencookie.app.data.DataRefreshCoordinator
 import com.opencookie.app.data.CookieRepository
@@ -16,6 +17,7 @@ import com.opencookie.app.domain.model.AppError
 import com.opencookie.app.domain.model.ProfilePresence
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
+import com.opencookie.app.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,7 +38,7 @@ data class CookieUiState(
     val isCookieOpeningInProgress: Boolean = false,
     val configLoaded: Boolean = false,
     val isOffline: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val buttonEnabled: Boolean = false,
     val profilePresence: ProfilePresence = ProfilePresence.Unknown,
     val showFirstLaunchOnboarding: Boolean = false,
@@ -55,7 +57,7 @@ class CookieViewModel @Inject constructor(
     private val appReadiness: AppReadiness,
 ) : ViewModel() {
 
-    private val _error = MutableStateFlow<String?>(null)
+    private val _error = MutableStateFlow<UiText?>(null)
     private val _cookieMessage = MutableStateFlow<String?>(null)
     private val _cookieOpeningPending = MutableStateFlow(false)
     private val cookieOpeningVisualState = combine(
@@ -107,7 +109,7 @@ class CookieViewModel @Inject constructor(
 
     fun breakCookie() {
         if (!canStartTransaction(appSession, transactionRunner)) {
-            _error.value = AppError.TransactionInProgress.userMessage
+            _error.value = AppError.TransactionInProgress.asUiText()
             _cookieOpeningPending.value = false
             return
         }
@@ -125,13 +127,13 @@ class CookieViewModel @Inject constructor(
                             _cookieMessage.value = cookieRepository.cookieMessage(cookieResult.messageIndex)
                             _cookieOpeningPending.value = false
                         }.onFailure {
-                            _error.value = (it as? AppError)?.userMessage ?: "Could not read cookie message"
+                            _error.value = (it as? AppError)?.asUiText() ?: UiText.StringResource(R.string.error_read_cookie_failed)
                             _cookieOpeningPending.value = false
                         }
                     }
                 }
                 is TransactionState.Failed -> {
-                    _error.value = state.error.userMessage
+                    _error.value = state.error.asUiText()
                     _cookieOpeningPending.value = false
                 }
                 else -> Unit
@@ -140,9 +142,16 @@ class CookieViewModel @Inject constructor(
         if (started) {
             _cookieOpeningPending.value = true
         } else {
-            _error.value = AppError.TransactionInProgress.userMessage
+            _error.value = AppError.TransactionInProgress.asUiText()
             _cookieOpeningPending.value = false
         }
+    }
+
+    fun cancelTransaction() {
+        transactionRunner.cancel()
+        _cookieOpeningPending.value = false
+        _error.value = null
+        _cookieMessage.value = null
     }
 
     fun dismissError() {
@@ -163,7 +172,7 @@ class CookieViewModel @Inject constructor(
 
     private companion object {
         data class CookieOpeningVisualState(
-            val error: String?,
+            val error: UiText?,
             val cookieMessage: String?,
             val cookieOpeningPending: Boolean,
         )

@@ -2,6 +2,7 @@ package com.opencookie.app.ui.screens.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opencookie.app.R
 import com.opencookie.app.data.DataRefreshCoordinator
 import com.opencookie.app.data.local.AppLocaleManager
 import com.opencookie.app.data.local.PreferencesStore
@@ -19,6 +20,7 @@ import com.opencookie.app.domain.model.NetworkFeePriority
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.domain.model.chainSyncState
+import com.opencookie.app.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 data class ProfileUiState(
@@ -49,7 +52,7 @@ data class ProfileUiState(
     val showCloseProfileDialog: Boolean = false,
     val transactionState: TransactionState = TransactionState.Idle,
     val transactionOrigin: TransactionOrigin? = null,
-    val message: String? = null,
+    val message: UiText? = null,
     val isSuccess: Boolean = false,
     val canCloseProfile: Boolean = false,
 )
@@ -69,7 +72,7 @@ class ProfileViewModel @Inject constructor(
     private val _isLoggingOut = MutableStateFlow(false)
     private val _isClosingProfile = MutableStateFlow(false)
     private val _showCloseProfileDialog = MutableStateFlow(false)
-    private val _message = MutableStateFlow<String?>(null)
+    private val _message = MutableStateFlow<UiText?>(null)
     private val _isSuccess = MutableStateFlow(false)
     private val _logoutCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val logoutCompleted: SharedFlow<Unit> = _logoutCompleted.asSharedFlow()
@@ -89,10 +92,9 @@ class ProfileViewModel @Inject constructor(
             ProfileFlags(a, b, c)
         },
         combine(_message, _isSuccess) { message, isSuccess -> message to isSuccess },
-        preferencesStore.networkFeePriorityFlow(),
-        _appLanguage,
-    ) { session, globalTx, flags, messageUi, networkFeePriority, appLanguage ->
-        val (message, isSuccess) = messageUi
+        combine(preferencesStore.networkFeePriorityFlow(), _appLanguage) { a, b -> a to b },
+    ) { session, globalTx, flags, (message, isSuccess), settings ->
+        val (networkFeePriority, appLanguage) = settings
         val balanceSol = "%.4f".format(session.balanceLamports / 1_000_000_000.0)
         val balanceKnown = session.lastRefreshMs > 0L
         val syncState = chainSyncState(
@@ -123,7 +125,16 @@ class ProfileViewModel @Inject constructor(
             isSuccess = isSuccess,
             canCloseProfile = session.profile != null && syncState == ChainSyncState.Ready,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProfileUiState())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ProfileUiState(
+            walletAddress = appSession.state.value.walletAddress?.toBase58() ?: "",
+            clusterName = appSession.state.value.cluster.cluster.name,
+            networkFeePriority = runBlocking { preferencesStore.getNetworkFeePriority() },
+            appLanguage = _appLanguage.value,
+        )
+    )
 
     fun disconnect() {
         if (_isLoggingOut.value) return
@@ -148,7 +159,7 @@ class ProfileViewModel @Inject constructor(
             lastRefreshMs = appSession.state.value.lastRefreshMs,
         )
         if (syncState != ChainSyncState.Ready) {
-            showError(AppError.ConfigNotLoaded.userMessage)
+            showError(AppError.ConfigNotLoaded.asUiText())
             return
         }
         _showCloseProfileDialog.value = true
@@ -168,7 +179,7 @@ class ProfileViewModel @Inject constructor(
         if (_isClosingProfile.value || !canStartTransaction(appSession, transactionRunner)) return
         _showCloseProfileDialog.value = false
         if (activityResultSenderRegistry.current() == null) {
-            showError(AppError.WalletActivityUnavailable.userMessage)
+            showError(AppError.WalletActivityUnavailable.asUiText())
             return
         }
 
@@ -180,11 +191,11 @@ class ProfileViewModel @Inject constructor(
                 is TransactionState.Confirmed -> {
                     _isClosingProfile.value = false
                     runCatching { dataRefreshCoordinator.refreshNow(force = true) }
-                    showSuccess("Profile closed. Rent returned to your wallet.")
+                    showSuccess(UiText.StringResource(R.string.profile_closed_success))
                 }
                 is TransactionState.Failed -> {
                     _isClosingProfile.value = false
-                    showError(state.error.userMessage)
+                    showError(state.error.asUiText())
                 }
                 else -> Unit
             }
@@ -207,15 +218,17 @@ class ProfileViewModel @Inject constructor(
     fun setAppLanguage(language: AppLanguage) {
         if (language == _appLanguage.value) return
         _appLanguage.value = language
-        appLocaleManager.applyLanguage(language)
+        viewModelScope.launch {
+            appLocaleManager.applyLanguage(language)
+        }
     }
 
-    private fun showError(text: String) {
+    private fun showError(text: UiText) {
         _isSuccess.value = false
         _message.value = text
     }
 
-    private fun showSuccess(text: String) {
+    private fun showSuccess(text: UiText) {
         _isSuccess.value = true
         _message.value = text
     }

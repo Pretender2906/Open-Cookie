@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.opencookie.app.domain.model.AppLanguage
 import com.opencookie.app.domain.model.Cluster
 import com.opencookie.app.domain.model.NetworkFeePriority
 import kotlinx.coroutines.flow.Flow
@@ -69,6 +70,15 @@ class PreferencesStore @Inject constructor(
     suspend fun getNetworkFeePriority(): NetworkFeePriority =
         networkFeePriorityFlow().first()
 
+    fun appLanguageFlow(): Flow<AppLanguage> =
+        dataStore.data.map { prefs ->
+            val stored = prefs[KEY_APP_LANGUAGE] ?: return@map AppLanguage.SystemDefault
+            runCatching { AppLanguage.valueOf(stored) }.getOrDefault(AppLanguage.SystemDefault)
+        }
+
+    suspend fun saveAppLanguage(language: AppLanguage) =
+        dataStore.edit { it[KEY_APP_LANGUAGE] = language.name }
+
     suspend fun getMwaIdentityIconVersion(): String? =
         dataStore.data.map { it[KEY_MWA_IDENTITY_ICON_VERSION] }.first()
 
@@ -100,6 +110,7 @@ class PreferencesStore @Inject constructor(
         private val KEY_CLUSTER = stringPreferencesKey("cluster")
         private val KEY_PENDING_TXS = stringPreferencesKey("pending_txs")
         private val KEY_NETWORK_FEE_PRIORITY = stringPreferencesKey("network_fee_priority")
+        private val KEY_APP_LANGUAGE = stringPreferencesKey("app_language")
         private val KEY_MWA_IDENTITY_ICON_VERSION = stringPreferencesKey("mwa_identity_icon_version")
         private val KEY_LAST_GOOD_RPC_DEVNET = stringPreferencesKey("last_good_rpc_devnet")
         private val KEY_LAST_GOOD_RPC_MAINNET = stringPreferencesKey("last_good_rpc_mainnet")

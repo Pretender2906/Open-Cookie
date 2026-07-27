@@ -185,7 +185,7 @@ class TransactionOrchestrator @Inject constructor(
                 )
             }
         }
-        return Result.failure(AppError.RpcError(-1, "Return data not available"))
+        return Result.failure(AppError.RevealMessageFailed)
     }
 
     private data class SentPayload(val signature: String, val signed: ByteArray, val unsigned: ByteArray)
@@ -372,7 +372,8 @@ class TransactionOrchestrator @Inject constructor(
         if (errJson.contains("SignatureVerification", ignoreCase = true)) {
             return AppError.WalletRejected
         }
-        return AppError.RpcError(-1, "On-chain: $errJson")
+        Log.e(TAG, "On-chain error: $errJson")
+        return AppError.BlockchainError
     }
 
     private fun actionToName(action: Action): String = when (action) {

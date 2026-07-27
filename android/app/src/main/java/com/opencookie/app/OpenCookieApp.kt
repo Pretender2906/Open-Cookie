@@ -2,15 +2,16 @@ package com.opencookie.app
 
 import android.app.Application
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
 import com.opencookie.app.data.AppReadiness
 import com.opencookie.app.data.DataRefreshCoordinator
 import com.opencookie.app.data.cluster.ClusterManager
 import com.opencookie.app.data.resilience.ConnectivityObserver
 import com.opencookie.app.data.session.AppSession
+import com.opencookie.app.data.local.AppLocaleManager
 import com.opencookie.app.data.transaction.BlockhashCache
 import com.opencookie.app.data.transaction.TransactionOrchestrator
 import com.opencookie.app.data.wallet.WalletConnectionManager
+import com.opencookie.app.domain.model.AppLanguage
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,7 @@ class OpenCookieApp : Application() {
     @Inject lateinit var walletConnectionManager: WalletConnectionManager
     @Inject lateinit var dataRefreshCoordinator: DataRefreshCoordinator
     @Inject lateinit var appReadiness: AppReadiness
+    @Inject lateinit var appLocaleManager: AppLocaleManager
     @Inject lateinit var blockhashCache: BlockhashCache
     @Inject lateinit var transactionOrchestrator: TransactionOrchestrator
     @Inject lateinit var connectivityObserver: ConnectivityObserver
@@ -35,11 +37,15 @@ class OpenCookieApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        AppCompatDelegate.setApplicationLocales(AppCompatDelegate.getApplicationLocales())
         // Online flag before any RPC refresh.
         connectivityObserver.hashCode()
 
         appScope.launch {
+            val savedLanguage = appLocaleManager.getCurrentLanguage()
+            if (savedLanguage != AppLanguage.SystemDefault) {
+                appLocaleManager.applyLanguage(savedLanguage)
+            }
+
             try {
                 withContext(Dispatchers.IO) {
                     appSession.restoreFromDisk()

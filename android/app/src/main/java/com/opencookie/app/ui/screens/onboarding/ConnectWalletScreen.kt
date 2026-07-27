@@ -57,6 +57,7 @@ import com.opencookie.app.data.wallet.WalletConnectionManager
 import com.opencookie.app.domain.model.AppError
 import com.opencookie.app.ui.theme.OpenCookieBackground
 import com.opencookie.app.ui.theme.OpenCookieWordmark
+import com.opencookie.app.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,7 +70,7 @@ data class ConnectWalletUiState(
     val isSyncing: Boolean = false,
     val connectedAddress: String? = null,
     val connectedAccountLabel: String? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     val isComplete: Boolean = false,
 )
 
@@ -96,7 +97,7 @@ class ConnectWalletViewModel @Inject constructor(
             if (activityResultSenderRegistry.current() == null) {
                 _uiState.value = _uiState.value.copy(
                     isConnecting = false,
-                    error = AppError.WalletActivityUnavailable.userMessage,
+                    error = AppError.WalletActivityUnavailable.asUiText(),
                 )
                 return@launch
             }
@@ -106,7 +107,7 @@ class ConnectWalletViewModel @Inject constructor(
                 val err = connectResult.exceptionOrNull()
                 _uiState.value = _uiState.value.copy(
                     isConnecting = false,
-                    error = (err as? AppError)?.userMessage ?: "Connection failed",
+                    error = (err as? AppError)?.asUiText() ?: UiText.StringResource(R.string.error_connection_failed),
                 )
                 return@launch
             }
@@ -125,7 +126,7 @@ class ConnectWalletViewModel @Inject constructor(
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isSyncing = false,
-                    error = "Failed to sync with blockchain",
+                    error = UiText.StringResource(R.string.error_sync_failed),
                 )
                 return@launch
             }
@@ -291,7 +292,7 @@ private fun LoadingPanel(text: String) {
 
 @Composable
 private fun ErrorPanel(
-    error: String,
+    error: UiText,
     onDismiss: () -> Unit,
 ) {
     Surface(
@@ -306,7 +307,7 @@ private fun ErrorPanel(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = error,
+                text = error.asString(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                 textAlign = TextAlign.Center,

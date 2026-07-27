@@ -22,6 +22,13 @@ class TransactionRunner @Inject constructor(
 
     val isActive: Boolean get() = activeJob?.isActive == true
 
+    fun cancel() {
+        val job = activeJob
+        activeJob = null
+        job?.cancel()
+        globalTransactionUi.reset()
+    }
+
     fun launch(
         action: Action,
         origin: TransactionOrigin,

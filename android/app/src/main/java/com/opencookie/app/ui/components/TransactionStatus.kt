@@ -25,6 +25,7 @@ import com.opencookie.app.R
 import com.opencookie.app.data.transaction.GlobalTransactionUi
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
+import com.opencookie.app.util.UiText
 
 @Composable
 fun ScreenTransactionStatus(
@@ -82,7 +83,7 @@ fun ScreenTransactionStatus(
 
 @Composable
 fun AppMessage(
-    message: String?,
+    message: UiText?,
     onDismiss: (() -> Unit)? = null,
     isSuccess: Boolean = false,
     modifier: Modifier = Modifier,
@@ -115,7 +116,7 @@ fun AppMessage(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = message,
+                    text = message.asString(),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor,

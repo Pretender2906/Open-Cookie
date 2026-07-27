@@ -62,11 +62,13 @@ import com.opencookie.app.R
 import com.opencookie.app.domain.model.AppLanguage
 import com.opencookie.app.domain.model.NetworkFeePriority
 import com.opencookie.app.domain.model.TransactionOrigin
+import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.ui.components.AppMessage
 import com.opencookie.app.ui.components.OpenCookieConfirmDialog
 import com.opencookie.app.ui.components.ScreenTransactionStatus
 import com.opencookie.app.ui.components.WalletChip
 import com.opencookie.app.ui.theme.OpenCookieBackground
+import com.opencookie.app.util.UiText
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -310,7 +312,7 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(24.dp))
                 Text(
-                    text = "Build ${BuildConfig.VERSION_NAME}",
+                    text = stringResource(R.string.profile_build_version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                 )
@@ -380,10 +382,12 @@ private fun LanguageSelector(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        ProfileRow(
-            label = stringResource(R.string.profile_language_title),
-            value = stringResource(selected.labelRes()),
-        )
+        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+            ProfileRow(
+                label = stringResource(R.string.profile_language_title),
+                value = stringResource(selected.labelRes()),
+            )
+        }
     }
 }
 

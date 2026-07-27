@@ -15,7 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.opencookie.app.R
 
 /**
  * The single, shared atmospheric backdrop for the whole app: a deep warm espresso gradient
@@ -66,7 +68,7 @@ fun OpenCookieWordmark(
     letterSpacing: Double = 6.0,
 ) {
     Text(
-        text = "OPEN COOKIE",
+        text = stringResource(R.string.cookie_title),
         modifier = modifier,
         textAlign = TextAlign.Center,
         style = TextStyle(
