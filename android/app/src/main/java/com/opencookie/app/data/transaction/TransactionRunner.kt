@@ -20,9 +20,13 @@ class TransactionRunner @Inject constructor(
     @Volatile
     private var activeJob: Job? = null
 
+    @Volatile
+    private var currentTransactionId: Int = 0
+
     val isActive: Boolean get() = activeJob?.isActive == true
 
     fun cancel() {
+        currentTransactionId++
         val job = activeJob
         activeJob = null
         job?.cancel()
@@ -35,18 +39,25 @@ class TransactionRunner @Inject constructor(
         onState: suspend (TransactionState) -> Unit,
     ): Boolean {
         if (isActive) return false
+
+        val transactionId = ++currentTransactionId
+
         activeJob = applicationScope.launch {
             globalTransactionUi.begin(origin)
             try {
                 orchestrator.execute(action).collect { state ->
-                    withContext(Dispatchers.Main.immediate) {
-                        globalTransactionUi.updatePhase(state)
-                        onState(state)
+                    if (currentTransactionId == transactionId) {
+                        withContext(Dispatchers.Main.immediate) {
+                            globalTransactionUi.updatePhase(state)
+                            onState(state)
+                        }
                     }
                 }
             } finally {
-                withContext(Dispatchers.Main.immediate) { globalTransactionUi.reset() }
-                activeJob = null
+                if (currentTransactionId == transactionId) {
+                    withContext(Dispatchers.Main.immediate) { globalTransactionUi.reset() }
+                    activeJob = null
+                }
             }
         }
         return true
