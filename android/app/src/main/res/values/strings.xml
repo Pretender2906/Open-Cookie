@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Open Cookie</string>
     <string name="cookie_title">OPEN COOKIE</string>
-    <string name="tap_the_cookie">Tap the cookie</string>
+    <string name="tap_the_cookie">Tap to open</string>
     <string name="first_launch_onboarding_title">Welcome to OpenCookie</string>
     <string name="first_launch_onboarding_message">Tap the cookie to reveal your first message</string>
     <string name="profile_create_confirm_title">One small step before your first cookie</string>
@@ -12,7 +12,7 @@
     <string name="profile_check_failed">Couldn\u2019t verify your profile — try again</string>
     <string name="cookie_cost">%1$s SOL</string>
     <string name="open_another">Open another</string>
-    <string name="cookie_stats_line">Opened today %1$d/%2$d · %3$d total</string>
+    <string name="cookie_stats_line">%1$d / %2$d opened today\n%3$d total opened</string>
     <string name="break_cookie">Break Cookie</string>
     <string name="stats_today">Today %1$d/%2$d</string>
     <string name="stats_today_label">Today</string>

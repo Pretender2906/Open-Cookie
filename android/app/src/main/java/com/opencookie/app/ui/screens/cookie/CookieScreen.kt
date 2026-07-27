@@ -411,9 +411,10 @@ private fun BottomArea(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp) // Фиксированная высота предотвращает "прыжки" печенья
+            .height(300.dp) // Увеличили общую высоту контейнера
             .padding(horizontal = 24.dp)
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .padding(bottom = 60.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -482,7 +483,7 @@ private fun BottomArea(
             // Используем alpha вместо удаления из макета, чтобы избежать изменения высоты Column
             Text(
                 text = stringResource(R.string.cookie_stats_line, callsToday, maxCallsPerDay, totalCalls),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelSmall.copy(lineHeight = 18.sp),
                 color = CookieCreamDim.copy(alpha = if (error == null && !profileCheckFailed) 0.5f else 0f),
                 textAlign = TextAlign.Center,
             )
