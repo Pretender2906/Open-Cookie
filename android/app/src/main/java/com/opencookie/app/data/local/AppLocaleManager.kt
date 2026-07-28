@@ -1,6 +1,5 @@
 package com.opencookie.app.data.local
 
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.opencookie.app.domain.model.AppLanguage

@@ -1,7 +1,7 @@
 package com.opencookie.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.opencookie.app.data.AppReadiness
@@ -15,7 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject lateinit var appSession: AppSession
     @Inject lateinit var appReadiness: AppReadiness
@@ -32,6 +32,12 @@ class MainActivity : ComponentActivity() {
                 AppNavHost(appSession = appSession, appReadiness = appReadiness)
             }
         }
+    }
+
+    override fun recreate() {
+        // Додаємо плавний перехід (fade in/out) замість стандартного миготіння
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        super.recreate()
     }
 
     override fun onDestroy() {
