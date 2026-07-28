@@ -33,7 +33,7 @@
     <string name="retry">Try again</string>
     <string name="dismiss_message">Dismiss</string>
     <string name="profile_title">Profile</string>
-    <string name="disconnect_wallet">Log out</string>
+    <string name="disconnect_wallet">Disconnect wallet</string>
     <string name="profile_close">Close profile</string>
     <string name="profile_close_confirm_title">Close on-chain profile?</string>
     <string name="profile_close_confirm_message">Your profile account will be closed and rent returned to your wallet. You can create a new profile with your next cookie break.</string>
@@ -93,9 +93,9 @@
     <string name="error_blockchain_generic">Blockchain error</string>
 
     <string name="address_copied">Address copied</string>
-    <string name="profile_closed_success">Profile closed. Rent returned to your wallet.</string>
+    <string name="profile_closed_success">Profile closed. Rent returned to your wallet</string>
     <string name="profile_build_version">Build %1$s</string>
-    <string name="cookie_fallback_message">Your cookie is waiting.</string>
+    <string name="cookie_fallback_message">Your cookie is waiting!</string>
 
     <string name="asset_statements">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://open-cookie.pages.dev\" } }]</string>
 </resources>
