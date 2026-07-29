@@ -43,19 +43,26 @@ private const val PaperSourceTop = 585
 private const val PaperSourceWidth = 848
 private const val PaperSourceHeight = 338
 private const val PaperVisibleAspect = PaperSourceWidth.toFloat() / PaperSourceHeight.toFloat()
-private const val PaperTextAreaWidthFraction = 0.64f
+private const val PaperTextAreaWidthFraction = 0.66f // Slightly wider
 /** Matches the visible cream band on the paper crop, not the full strip height. */
-private const val PaperTextAreaHeightFraction = 0.62f
+private const val PaperTextAreaHeightFraction = 0.65f // Slightly taller for 4-line messages
 /** Positions the text block on the paper; cream band sits below geometric center. */
 private const val PaperTextAreaVerticalBias3Lines = 0.28f
 private const val PaperTextAreaVerticalBias4Lines = 0.16f
 private const val LineHeightSafety3Lines = 0.95f
-private const val LineHeightSafety4Lines = 0.90f
+private const val LineHeightSafety4Lines = 0.88f // More strict for 4 lines
 private const val TextRevealFeatherFraction = 0.14f
 
 private val FortuneMessageFont = FontFamily(
     Font(R.font.kalam_regular, FontWeight.Normal),
     Font(R.font.kalam_bold, FontWeight.Bold),
+)
+
+private val FortuneMessageFontCyrillic = FontFamily(
+    Font(R.font.lora_italic_wght, FontWeight.Normal),
+    Font(R.font.lora_italic_wght, FontWeight.Medium),
+    Font(R.font.lora_italic_wght, FontWeight.SemiBold),
+    Font(R.font.lora_italic_wght, FontWeight.Bold),
 )
 
 @Composable
@@ -73,6 +80,7 @@ fun FortunePaper(
         val fullPaperHeight = fullPaperWidth / PaperVisibleAspect
 
         val content = message?.trim().orEmpty()
+        val isCyrillic = content.any { it in '\u0400'..'\u04FF' }
         val maxLines = if (content.length > 68) 4 else 3
         val textPaddingTop = 4.dp
         val textPaddingBottom = 4.dp
@@ -100,9 +108,16 @@ fun FortunePaper(
             mediumText -> 21.sp
             else -> 23.sp
         }
-        val lineHeight = minOf(baseLineHeight.value, maxLineHeightDp.value).sp
-        val scale = lineHeight.value / baseLineHeight.value
-        val fontSize = (baseFontSize.value * scale).sp
+
+        // Apply scale factor BEFORE calculating constraints to avoid clipping
+        // Lora is a refined serif, works well with moderate scaling and weight
+        val cyrillicScale = if (isCyrillic) 1.1f else 1.0f
+        val scaledFontSize = baseFontSize * cyrillicScale
+        val scaledLineHeight = baseLineHeight * (if (isCyrillic) 1.08f else 1.0f)
+
+        val lineHeight = minOf(scaledLineHeight.value, maxLineHeightDp.value).sp
+        val finalScale = lineHeight.value / scaledLineHeight.value
+        val fontSize = (scaledFontSize.value * finalScale).sp
 
         Box(
             modifier = Modifier
@@ -147,6 +162,10 @@ fun FortunePaper(
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     alpha = revealAlpha
+                                    // Balanced physics: enough to see, safe enough to fit
+                                    rotationZ = -1.2f
+                                    rotationX = 8f 
+                                    cameraDistance = 10f * density
                                     compositingStrategy = CompositingStrategy.Offscreen
                                 }
                                 .drawWithCache {
@@ -180,8 +199,8 @@ fun FortunePaper(
                                 maxLines = maxLines,
                                 overflow = TextOverflow.Ellipsis,
                                 style = TextStyle(
-                                    fontFamily = FortuneMessageFont,
-                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = if (isCyrillic) FortuneMessageFontCyrillic else FortuneMessageFont,
+                                    fontWeight = if (isCyrillic) FontWeight.SemiBold else FontWeight.Medium,
                                     fontSize = fontSize,
                                     lineHeight = lineHeight,
                                     color = PaperInk,
