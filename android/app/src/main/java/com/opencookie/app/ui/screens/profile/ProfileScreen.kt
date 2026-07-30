@@ -64,6 +64,7 @@ import com.opencookie.app.domain.model.NetworkFeePriority
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.ui.components.AppMessage
+import com.opencookie.app.ui.components.OpenCookieAlertDialog
 import com.opencookie.app.ui.components.OpenCookieConfirmDialog
 import com.opencookie.app.ui.components.ScreenTransactionStatus
 import com.opencookie.app.ui.components.WalletChip
@@ -143,8 +144,7 @@ fun ProfileScreen(
                     Button(
                         onClick = { viewModel.disconnect() },
                         enabled = !uiState.isLoggingOut &&
-                            !uiState.isTransactionInProgress &&
-                            !uiState.hasPendingTransactions,
+                            !uiState.isTransactionInProgress,
                         modifier = Modifier
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 56.dp),
@@ -180,8 +180,7 @@ fun ProfileScreen(
                                 }
                             },
                             enabled = !uiState.isClosingProfile && !uiState.isLoggingOut &&
-                                !uiState.isTransactionInProgress &&
-                                !uiState.hasPendingTransactions,
+                                !uiState.isTransactionInProgress,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = 52.dp),
@@ -269,7 +268,7 @@ fun ProfileScreen(
                 NetworkFeePrioritySelector(
                     selected = uiState.networkFeePriority,
                     enabled = !uiState.isLoggingOut && !uiState.isClosingProfile &&
-                        !uiState.isTransactionInProgress && !uiState.hasPendingTransactions,
+                        !uiState.isTransactionInProgress,
                     onSelected = viewModel::setNetworkFeePriority,
                 )
 
@@ -277,7 +276,7 @@ fun ProfileScreen(
                 LanguageSelector(
                     selected = uiState.appLanguage,
                     enabled = !uiState.isLoggingOut && !uiState.isClosingProfile &&
-                        !uiState.isTransactionInProgress && !uiState.hasPendingTransactions,
+                        !uiState.isTransactionInProgress,
                     onClick = { showLanguagePicker = true },
                 )
 
@@ -329,6 +328,15 @@ fun ProfileScreen(
             dismissText = stringResource(R.string.profile_close_cancel),
             onConfirm = { viewModel.confirmCloseProfile() },
             onDismiss = { viewModel.dismissCloseProfileDialog() },
+        )
+    }
+
+    if (uiState.showCloseSuccessDialog) {
+        OpenCookieAlertDialog(
+            title = stringResource(R.string.profile_closed_success_title),
+            message = stringResource(R.string.profile_closed_success),
+            confirmText = stringResource(R.string.profile_closed_success_ok),
+            onConfirm = { viewModel.dismissCloseSuccessDialog() },
         )
     }
 

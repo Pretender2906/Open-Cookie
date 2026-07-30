@@ -94,6 +94,8 @@
 
     <string name="address_copied">Address copied</string>
     <string name="profile_closed_success">Profile closed. Rent returned to your wallet</string>
+    <string name="profile_closed_success_title">Profile closed</string>
+    <string name="profile_closed_success_ok">Got it</string>
     <string name="profile_build_version">Build %1$s</string>
     <string name="cookie_fallback_message">Your cookie is waiting!</string>
 

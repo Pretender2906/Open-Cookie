@@ -94,6 +94,8 @@
 
     <string name="address_copied">地址已复制</string>
     <string name="profile_closed_success">个人资料已关闭，租金已退回到你的钱包</string>
+    <string name="profile_closed_success_title">个人资料已关闭</string>
+    <string name="profile_closed_success_ok">知道了</string>
     <string name="profile_build_version">版本 %1$s</string>
     <string name="cookie_fallback_message">你的饼干在等你。</string>
 

@@ -147,13 +147,19 @@ class TransactionOrchestrator @Inject constructor(
     }
 
     suspend fun recoverPendingOnLaunch() {
+        // Initial pruning for clearly invalid entries (e.g. from future or extremely old)
         appSession.pruneStalePendingTransactions(maxAgeMs = AppSession.PENDING_MAX_AGE_MS)
+
         val pending = appSession.state.value.pendingTransactions
         if (pending.isEmpty()) return
+
         val sigs = pending.map { it.signature }
-        val statuses = rpcClient.getSignatureStatuses(sigs, searchHistory = true).getOrNull() ?: return
-        for ((i, status) in statuses.withIndex()) {
-            val tx = pending[i]
+        // If RPC fails (null), we continue to evaluate age-based pruning for each transaction.
+        val statuses = rpcClient.getSignatureStatuses(sigs, searchHistory = true).getOrNull()
+
+        val now = System.currentTimeMillis()
+        for ((i, tx) in pending.withIndex()) {
+            val status = statuses?.getOrNull(i)
             if (status != null) {
                 val confirmed = status.confirmationStatus == "confirmed" ||
                     status.confirmationStatus == "finalized"
@@ -163,10 +169,12 @@ class TransactionOrchestrator @Inject constructor(
                         appSession.removePendingTransaction(tx.signature)
                     }
                     status.err != null -> {
+                        // Transaction failed on-chain, can be removed from local tracking
                         appSession.removePendingTransaction(tx.signature)
                     }
                 }
-            } else if (System.currentTimeMillis() - tx.createdAtMs > AppSession.PENDING_MAX_AGE_MS) {
+            } else if (now - tx.createdAtMs > AppSession.PENDING_MAX_AGE_MS) {
+                // Not found on-chain and exceeded maximum lifetime
                 appSession.removePendingTransaction(tx.signature)
             }
         }

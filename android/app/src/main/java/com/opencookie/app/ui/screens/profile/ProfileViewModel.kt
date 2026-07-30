@@ -50,6 +50,7 @@ data class ProfileUiState(
     val isTransactionInProgress: Boolean = false,
     val hasPendingTransactions: Boolean = false,
     val showCloseProfileDialog: Boolean = false,
+    val showCloseSuccessDialog: Boolean = false,
     val transactionState: TransactionState = TransactionState.Idle,
     val transactionOrigin: TransactionOrigin? = null,
     val message: UiText? = null,
@@ -72,6 +73,7 @@ class ProfileViewModel @Inject constructor(
     private val _isLoggingOut = MutableStateFlow(false)
     private val _isClosingProfile = MutableStateFlow(false)
     private val _showCloseProfileDialog = MutableStateFlow(false)
+    private val _showCloseSuccessDialog = MutableStateFlow(false)
     private val _message = MutableStateFlow<UiText?>(null)
     private val _isSuccess = MutableStateFlow(false)
     private val _logoutCompleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -83,13 +85,19 @@ class ProfileViewModel @Inject constructor(
         val isLoggingOut: Boolean,
         val isClosingProfile: Boolean,
         val showCloseProfileDialog: Boolean,
+        val showCloseSuccessDialog: Boolean,
     )
 
     val uiState: StateFlow<ProfileUiState> = combine(
         appSession.state,
         globalTransactionUi.state,
-        combine(_isLoggingOut, _isClosingProfile, _showCloseProfileDialog) { a, b, c ->
-            ProfileFlags(a, b, c)
+        combine(
+            _isLoggingOut,
+            _isClosingProfile,
+            _showCloseProfileDialog,
+            _showCloseSuccessDialog
+        ) { a, b, c, d ->
+            ProfileFlags(a, b, c, d)
         },
         combine(_message, _isSuccess) { message, isSuccess -> message to isSuccess },
         combine(preferencesStore.networkFeePriorityFlow(), _appLanguage) { a, b -> a to b },
@@ -119,6 +127,7 @@ class ProfileViewModel @Inject constructor(
             isTransactionInProgress = session.isTransactionInProgress,
             hasPendingTransactions = session.hasPendingTransactions,
             showCloseProfileDialog = flags.showCloseProfileDialog,
+            showCloseSuccessDialog = flags.showCloseSuccessDialog,
             transactionState = globalTx.phase,
             transactionOrigin = globalTx.origin,
             message = message,
@@ -139,7 +148,8 @@ class ProfileViewModel @Inject constructor(
     fun disconnect() {
         if (_isLoggingOut.value) return
         if (appSession.state.value.isTransactionInProgress) return
-        if (appSession.state.value.hasPendingTransactions) return
+        // Disconnect is an escape hatch; we allow it even if there are unresolved
+        // pending transactions records. appSession.logout() will clear them.
         viewModelScope.launch {
             _isLoggingOut.value = true
             try {
@@ -175,6 +185,10 @@ class ProfileViewModel @Inject constructor(
         _showCloseProfileDialog.value = false
     }
 
+    fun dismissCloseSuccessDialog() {
+        _showCloseSuccessDialog.value = false
+    }
+
     fun confirmCloseProfile() {
         if (_isClosingProfile.value || !canStartTransaction(appSession, transactionRunner)) return
         _showCloseProfileDialog.value = false
@@ -191,7 +205,7 @@ class ProfileViewModel @Inject constructor(
                 is TransactionState.Confirmed -> {
                     _isClosingProfile.value = false
                     runCatching { dataRefreshCoordinator.refreshNow(force = true) }
-                    showSuccess(UiText.StringResource(R.string.profile_closed_success))
+                    _showCloseSuccessDialog.value = true
                 }
                 is TransactionState.Failed -> {
                     _isClosingProfile.value = false

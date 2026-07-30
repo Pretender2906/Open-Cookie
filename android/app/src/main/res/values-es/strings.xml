@@ -94,6 +94,8 @@
 
     <string name="address_copied">Dirección copiada</string>
     <string name="profile_closed_success">Perfil cerrado. El alquiler se devolvió a tu billetera</string>
+    <string name="profile_closed_success_title">Perfil cerrado</string>
+    <string name="profile_closed_success_ok">Entendido</string>
     <string name="profile_build_version">Versión %1$s</string>
     <string name="cookie_fallback_message">¡Tu galleta te espera!</string>
 

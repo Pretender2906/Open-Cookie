@@ -7,7 +7,6 @@ import com.opencookie.admin.domain.model.Cluster
 object RpcEndpointPool {
 
     private const val DEVNET_PUBLIC = "https://api.devnet.solana.com"
-    private const val DEVNET_ANKR = "https://rpc.ankr.com/solana_devnet"
 
     private const val MAINNET_DRPC = "https://solana.drpc.org"
     private const val MAINNET_PUBLICNODE = "https://solana-rpc.publicnode.com"
@@ -17,7 +16,6 @@ object RpcEndpointPool {
         Cluster.Devnet -> listOf(
             BuildConfig.DEVNET_RPC_URL,
             DEVNET_PUBLIC,
-            DEVNET_ANKR,
         ).filter { it.isNotBlank() }.distinct()
 
         Cluster.MainnetBeta -> {

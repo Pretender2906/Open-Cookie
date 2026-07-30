@@ -44,7 +44,17 @@ fun canStartTransaction(
     transactionRunner: TransactionRunner,
 ): Boolean {
     if (transactionRunner.isActive) return false
-    if (appSession.state.value.isTransactionInProgress) return false
-    if (appSession.state.value.hasPendingTransactions) return false
+    val session = appSession.state.value
+    if (session.isTransactionInProgress) return false
+
+    val pending = session.pendingTransactions
+    if (pending.isNotEmpty()) {
+        val now = System.currentTimeMillis()
+        // If there are pending transactions that are NOT stale, we block to prevent duplicates.
+        // Stale transactions (unresolved records) should not block the user forever.
+        val hasActivePending = pending.any { now - it.createdAtMs <= com.opencookie.app.data.session.AppSession.PENDING_MAX_AGE_MS }
+        if (hasActivePending) return false
+    }
+
     return true
 }

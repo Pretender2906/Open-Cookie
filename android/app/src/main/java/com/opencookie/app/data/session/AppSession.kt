@@ -162,8 +162,16 @@ class AppSession @Inject constructor(
     }
 
     suspend fun pruneStalePendingTransactions(maxAgeMs: Long = PENDING_MAX_AGE_MS) {
-        val cutoff = System.currentTimeMillis() - maxAgeMs
-        _state.update { it.copy(pendingTransactions = it.pendingTransactions.filter { tx -> tx.createdAtMs >= cutoff }) }
+        val now = System.currentTimeMillis()
+        val cutoff = now - maxAgeMs
+        // Safeguard: transactions from the future (clock jumps) or older than cutoff are pruned.
+        // We allow a small grace period for future to account for minor drift.
+        val futureLimit = now + 10_000L
+        _state.update { s ->
+            s.copy(pendingTransactions = s.pendingTransactions.filter { tx ->
+                tx.createdAtMs in cutoff..futureLimit
+            })
+        }
         persistPendingTransactionsToDisk()
     }
 
