@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <queries>
+        <package android:name="app.phantom" />
+        <package android:name="com.solflare.mobile" />
+        <package android:name="com.jup.wallet" />
+        <package android:name="app.backpack.mobile" />
+        <package android:name="com.okinc.okx.wallet" />
+        <package android:name="com.ledger.live" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="solana-wallet" />
+        </intent>
+    </queries>
+
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -30,7 +44,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="open-cookie.pages.dev" />
+                    android:host="open-cookie.pages.dev"
+                    android:pathPrefix="/admin" />
             </intent-filter>
         </activity>
     </application>
