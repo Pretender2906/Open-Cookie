@@ -5,7 +5,7 @@ on:
 
 jobs:
   size-audit:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -14,13 +14,14 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.85.1
-      - name: Install Solana CLI
+          toolchain: 1.89.0
+
+      - name: Install Solana 2.3.0
         shell: bash
         run: |
           set -euo pipefail
 
-          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.3.0/install)"
 
           SOLANA_BIN="$HOME/.local/share/solana/install/active_release/bin"
           export PATH="$SOLANA_BIN:$PATH"
@@ -28,14 +29,19 @@ jobs:
           echo "$SOLANA_BIN" >> "$GITHUB_PATH"
 
           solana --version
-      
-      - name: Install AVM
+          cargo build-sbf --version
+
+      - name: Install Anchor CLI 0.32.1
         shell: bash
         run: |
           set -euo pipefail
-          cargo install --git https://github.com/coral-xyz/anchor avm --locked
-          avm install 0.32.1
-          avm use 0.32.1
+
+          cargo install \
+            --git https://github.com/solana-foundation/anchor \
+            --tag v0.32.1 \
+            anchor-cli \
+            --locked
+
           anchor --version
 
       - name: Build and measure variants
@@ -45,60 +51,93 @@ jobs:
 
           PROGRAM="target/deploy/open_cookie.so"
 
-          rent_for() {
-            local bytes="$1"
-            solana rent "$bytes" | head -n 1
-          }
-
           measure() {
             local label="$1"
             local bytes
+
             bytes=$(stat -c%s "$PROGRAM")
-            echo "$label|$bytes|$(rent_for "$bytes")"
+
+            echo ""
+            echo "=========================================="
+            echo "$label"
+            echo "=========================================="
+            echo "Size: $bytes bytes"
+            echo "Size: $(awk "BEGIN {printf \"%.2f\", $bytes/1024}") KiB"
+            echo ""
+
+            solana rent "$bytes" || true
           }
 
-          echo "=== BASELINE ==="
+          echo "=========================================="
+          echo "BASELINE"
+          echo "=========================================="
+
           anchor clean
           anchor build
-          measure "baseline"
 
-          echo "=== NO-IDL ==="
+          cp "$PROGRAM" /tmp/open_cookie_baseline.so
+
+          measure "BASELINE"
+
+          echo "=========================================="
+          echo "NO-IDL"
+          echo "=========================================="
+
           anchor clean
           anchor build -- --features no-idl
-          cp "$PROGRAM" /tmp/open_cookie_no_idl.so
-          measure "no-idl"
 
-          echo "=== NO-IDL + NO-LOG-IX-NAME ==="
+          cp "$PROGRAM" /tmp/open_cookie_no_idl.so
+
+          measure "NO-IDL"
+
+          echo "=========================================="
+          echo "NO-IDL + NO-LOG-IX-NAME"
+          echo "=========================================="
+
           anchor clean
           anchor build -- --features no-idl,no-log-ix-name
+
           cp "$PROGRAM" /tmp/open_cookie_no_idl_no_log.so
-          measure "no-idl+no-log-ix-name"
 
-          echo "=== FILE SIZES ==="
-          stat -c "%n %s bytes"             "$PROGRAM"             /tmp/open_cookie_no_idl.so             /tmp/open_cookie_no_idl_no_log.so
+          measure "NO-IDL + NO-LOG-IX-NAME"
 
-          echo "=== SUMMARY ==="
-          python3 - <<'PY'
+          echo ""
+          echo "=========================================="
+          echo "FINAL COMPARISON"
+          echo "=========================================="
+
+          python3 <<'PY'
           import os
 
           files = {
-              "baseline": "target/deploy/open_cookie.so",
+              "Baseline": "/tmp/open_cookie_baseline.so",
               "no-idl": "/tmp/open_cookie_no_idl.so",
-              "no-idl+no-log-ix-name": "/tmp/open_cookie_no_idl_no_log.so",
+              "no-idl + no-log-ix-name": "/tmp/open_cookie_no_idl_no_log.so",
           }
 
-          sizes = {name: os.path.getsize(path) for name, path in files.items()}
-          base = sizes["baseline"]
+          sizes = {
+              name: os.path.getsize(path)
+              for name, path in files.items()
+          }
 
-          print(f"Baseline: {base:,} bytes")
-          for name, size in sizes.items():
-              if name == "baseline":
-                  continue
-              saved = base - size
-              pct = saved / base * 100
-              print(f"{name}: {size:,} bytes | saved {saved:,} bytes ({pct:.2f}%)")
+          baseline = sizes["Baseline"]
 
           print()
-          print("NOTE: This workflow measures the compiled .so files.")
-          print("It does not deploy anything and does not modify the repository.")
+          print(f"{'Configuration':30} {'Bytes':>12} {'Saved':>12} {'Reduction':>12}")
+          print("-" * 70)
+
+          for name, size in sizes.items():
+              saved = baseline - size
+              reduction = saved / baseline * 100
+
+              print(
+                  f"{name:30} "
+                  f"{size:12,} "
+                  f"{saved:12,} "
+                  f"{reduction:11.2f}%"
+              )
+
+          print()
+          print("No program was deployed.")
+          print("Only local SBF binaries were built and measured.")
           PY
