@@ -1,0 +1,99 @@
+name: Open Cookie Size Audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  size-audit:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.85.1
+
+      - name: Install Solana CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          solana --version
+
+      - name: Install AVM
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked
+          avm install 0.32.1
+          avm use 0.32.1
+          anchor --version
+
+      - name: Build and measure variants
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PROGRAM="target/deploy/open_cookie.so"
+
+          rent_for() {
+            local bytes="$1"
+            solana rent "$bytes" | head -n 1
+          }
+
+          measure() {
+            local label="$1"
+            local bytes
+            bytes=$(stat -c%s "$PROGRAM")
+            echo "$label|$bytes|$(rent_for "$bytes")"
+          }
+
+          echo "=== BASELINE ==="
+          anchor clean
+          anchor build
+          measure "baseline"
+
+          echo "=== NO-IDL ==="
+          anchor clean
+          anchor build -- --features no-idl
+          cp "$PROGRAM" /tmp/open_cookie_no_idl.so
+          measure "no-idl"
+
+          echo "=== NO-IDL + NO-LOG-IX-NAME ==="
+          anchor clean
+          anchor build -- --features no-idl,no-log-ix-name
+          cp "$PROGRAM" /tmp/open_cookie_no_idl_no_log.so
+          measure "no-idl+no-log-ix-name"
+
+          echo "=== FILE SIZES ==="
+          stat -c "%n %s bytes"             "$PROGRAM"             /tmp/open_cookie_no_idl.so             /tmp/open_cookie_no_idl_no_log.so
+
+          echo "=== SUMMARY ==="
+          python3 - <<'PY'
+          import os
+
+          files = {
+              "baseline": "target/deploy/open_cookie.so",
+              "no-idl": "/tmp/open_cookie_no_idl.so",
+              "no-idl+no-log-ix-name": "/tmp/open_cookie_no_idl_no_log.so",
+          }
+
+          sizes = {name: os.path.getsize(path) for name, path in files.items()}
+          base = sizes["baseline"]
+
+          print(f"Baseline: {base:,} bytes")
+          for name, size in sizes.items():
+              if name == "baseline":
+                  continue
+              saved = base - size
+              pct = saved / base * 100
+              print(f"{name}: {size:,} bytes | saved {saved:,} bytes ({pct:.2f}%)")
+
+          print()
+          print("NOTE: This workflow measures the compiled .so files.")
+          print("It does not deploy anything and does not modify the repository.")
+          PY
