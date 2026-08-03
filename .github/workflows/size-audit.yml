@@ -11,10 +11,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libudev-dev
+
+      - name: Install Rust 1.89.0
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
+
+      - name: Verify Rust
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rustc --version
+          cargo --version
 
       - name: Install Solana 2.3.0
         shell: bash
@@ -24,11 +42,14 @@ jobs:
           sh -c "$(curl -sSfL https://release.anza.xyz/v2.3.0/install)"
 
           SOLANA_BIN="$HOME/.local/share/solana/install/active_release/bin"
-          export PATH="$SOLANA_BIN:$PATH"
 
+          export PATH="$SOLANA_BIN:$PATH"
           echo "$SOLANA_BIN" >> "$GITHUB_PATH"
 
+          echo "Solana:"
           solana --version
+
+          echo "SBF build tool:"
           cargo build-sbf --version
 
       - name: Install Anchor CLI 0.32.1
@@ -42,7 +63,23 @@ jobs:
             anchor-cli \
             --locked
 
+          echo "Anchor:"
           anchor --version
+
+      - name: Verify project versions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=== Toolchain ==="
+          rustc --version
+          solana --version
+          anchor --version
+
+          echo ""
+          echo "=== Project ==="
+          grep 'anchor-lang' programs/open-cookie/Cargo.toml
+          grep 'solana-sha256-hasher' programs/open-cookie/Cargo.toml
 
       - name: Build and measure variants
         shell: bash
@@ -55,6 +92,11 @@ jobs:
             local label="$1"
             local bytes
 
+            if [ ! -f "$PROGRAM" ]; then
+              echo "ERROR: $PROGRAM was not produced."
+              exit 1
+            fi
+
             bytes=$(stat -c%s "$PROGRAM")
 
             echo ""
@@ -63,13 +105,15 @@ jobs:
             echo "=========================================="
             echo "Size: $bytes bytes"
             echo "Size: $(awk "BEGIN {printf \"%.2f\", $bytes/1024}") KiB"
-            echo ""
 
+            echo ""
+            echo "Solana rent:"
             solana rent "$bytes" || true
           }
 
+          echo ""
           echo "=========================================="
-          echo "BASELINE"
+          echo "1. BASELINE"
           echo "=========================================="
 
           anchor clean
@@ -79,8 +123,9 @@ jobs:
 
           measure "BASELINE"
 
+          echo ""
           echo "=========================================="
-          echo "NO-IDL"
+          echo "2. NO-IDL"
           echo "=========================================="
 
           anchor clean
@@ -90,8 +135,9 @@ jobs:
 
           measure "NO-IDL"
 
+          echo ""
           echo "=========================================="
-          echo "NO-IDL + NO-LOG-IX-NAME"
+          echo "3. NO-IDL + NO-LOG-IX-NAME"
           echo "=========================================="
 
           anchor clean
@@ -103,7 +149,7 @@ jobs:
 
           echo ""
           echo "=========================================="
-          echo "FINAL COMPARISON"
+          echo "FINAL SIZE COMPARISON"
           echo "=========================================="
 
           python3 <<'PY'
@@ -123,8 +169,13 @@ jobs:
           baseline = sizes["Baseline"]
 
           print()
-          print(f"{'Configuration':30} {'Bytes':>12} {'Saved':>12} {'Reduction':>12}")
-          print("-" * 70)
+          print(
+              f"{'Configuration':30} "
+              f"{'Bytes':>12} "
+              f"{'Saved':>12} "
+              f"{'Reduction':>12}"
+          )
+          print("-" * 72)
 
           for name, size in sizes.items():
               saved = baseline - size
