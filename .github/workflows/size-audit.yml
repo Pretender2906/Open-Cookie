@@ -77,6 +77,33 @@ jobs:
           echo ""
           echo "=== SBF builder ==="
           "$SOLANA_BIN/cargo-build-sbf" --version
+      - name: DEBUG after Solana
+        shell: bash
+        run: |
+          set -eux
+
+          echo "=== PATH ==="
+          echo "$PATH"
+
+          echo "=== CARGO ==="
+          which cargo
+          cargo --version
+
+          echo "=== RUSTC ==="
+          which rustc
+          rustc --version
+
+          echo "=== RUSTUP ==="
+          rustup which cargo
+          rustup which rustc
+
+          echo "=== CARGO BIN ==="
+          ls -l "$HOME/.cargo/bin/cargo"
+          ls -l "$HOME/.cargo/bin/rustc"
+
+          echo "=== SOLANA BIN ==="
+          SOLANA_BIN="$HOME/.local/share/solana/install/active_release/bin"
+          ls -l "$SOLANA_BIN" | grep -E 'cargo|rustc|solana' || true
 
       - name: Install Anchor CLI 0.32.1
         shell: bash
