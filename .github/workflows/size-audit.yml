@@ -22,17 +22,24 @@ jobs:
             libudev-dev
 
       - name: Install Rust 1.89.0
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.89.0
+        uses: dtolnay/rust-toolchain@1.89.0
 
-      - name: Verify Rust
+      - name: Verify host Rust toolchain
         shell: bash
         run: |
           set -euo pipefail
 
-          rustc --version
+          echo "PATH=$PATH"
+          echo "cargo:"
+          which cargo
           cargo --version
+
+          echo "rustc:"
+          which rustc
+          rustc --version
+
+          echo "rustup:"
+          rustup --version
 
       - name: Install Solana 2.3.0
         shell: bash
@@ -43,19 +50,48 @@ jobs:
 
           SOLANA_BIN="$HOME/.local/share/solana/install/active_release/bin"
 
-          export PATH="$SOLANA_BIN:$PATH"
+          # IMPORTANT:
+          # Do NOT prepend the Solana directory to PATH here.
+          # Its bundled tooling contains an older Cargo.
+          #
+          # We only expose Solana executables to future steps
+          # through GITHUB_PATH, after the normal Rust toolchain.
+
           echo "$SOLANA_BIN" >> "$GITHUB_PATH"
 
-          echo "Solana:"
-          solana --version
+          export PATH="$HOME/.cargo/bin:$SOLANA_BIN:$PATH"
 
-          echo "SBF build tool:"
-          cargo build-sbf --version
+          echo "=== Solana ==="
+          "$SOLANA_BIN/solana" --version
+
+          echo ""
+          echo "=== Host Cargo ==="
+          which cargo
+          cargo --version
+
+          echo ""
+          echo "=== Host Rust ==="
+          which rustc
+          rustc --version
+
+          echo ""
+          echo "=== SBF builder ==="
+          "$SOLANA_BIN/cargo-build-sbf" --version
 
       - name: Install Anchor CLI 0.32.1
         shell: bash
         run: |
           set -euo pipefail
+
+          # Explicitly restore the host Rust toolchain.
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+          echo "Using host Cargo:"
+          which cargo
+          cargo --version
+
+          echo "Using host Rust:"
+          rustc --version
 
           cargo install \
             --git https://github.com/solana-foundation/anchor \
@@ -63,23 +99,32 @@ jobs:
             anchor-cli \
             --locked
 
+          echo ""
           echo "Anchor:"
           anchor --version
 
-      - name: Verify project versions
+      - name: Verify complete toolchain
         shell: bash
         run: |
           set -euo pipefail
 
-          echo "=== Toolchain ==="
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+          echo "=== Rust ==="
           rustc --version
+          cargo --version
+
+          echo ""
+          echo "=== Solana ==="
           solana --version
+
+          echo ""
+          echo "=== Anchor ==="
           anchor --version
 
           echo ""
-          echo "=== Project ==="
+          echo "=== Project Anchor version ==="
           grep 'anchor-lang' programs/open-cookie/Cargo.toml
-          grep 'solana-sha256-hasher' programs/open-cookie/Cargo.toml
 
       - name: Build and measure variants
         shell: bash
@@ -158,7 +203,8 @@ jobs:
           files = {
               "Baseline": "/tmp/open_cookie_baseline.so",
               "no-idl": "/tmp/open_cookie_no_idl.so",
-              "no-idl + no-log-ix-name": "/tmp/open_cookie_no_idl_no_log.so",
+              "no-idl + no-log-ix-name":
+                  "/tmp/open_cookie_no_idl_no_log.so",
           }
 
           sizes = {
