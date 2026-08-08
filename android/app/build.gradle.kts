@@ -43,7 +43,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0"
         buildConfigField("String", "DEVNET_RPC_URL", "\"$devnetRpcUrl\"")
         buildConfigField("String", "MAINNET_RPC_URL", "\"$mainnetRpcUrl\"")
     }

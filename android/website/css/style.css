@@ -957,6 +957,25 @@ code {
     margin: 0 auto 22px;
 }
 
+.apk-cta-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr;
+    gap: clamp(24px, 5vw, 48px);
+    align-items: center;
+}
+
+@media (max-width: 820px) {
+    .apk-cta-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+        text-align: center;
+    }
+
+    .apk-cta-grid .hero-actions {
+        justify-content: center;
+    }
+}
+
 .content-page {
     padding: 34px 0 84px;
 }

@@ -1,5 +1,10 @@
 package com.opencookie.app.ui.screens.cookie
 
+import android.view.HapticFeedbackConstants
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -42,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,6 +95,22 @@ fun CookieScreen(
     val latestCookieMessage by rememberUpdatedState(uiState.cookieMessage)
     val latestError by rememberUpdatedState(uiState.error)
     val hapticFeedback = LocalHapticFeedback.current
+    val view = LocalView.current
+    val context = LocalContext.current
+    val vibrator = remember(context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
+    LaunchedEffect(view) {
+        view.isHapticFeedbackEnabled = true
+    }
+
     var paperFocused by rememberSaveable { mutableStateOf(false) }
     var textVisible by rememberSaveable { mutableStateOf(false) }
     var resetEnabled by rememberSaveable { mutableStateOf(false) }
@@ -170,17 +193,31 @@ fun CookieScreen(
         if (phase == CookiePhase.BREAKING) {
             delay(CrackHapticDelayMs)
             if (phase == CookiePhase.BREAKING && latestError == null) {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                delay(50L)
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                // Используем Vibrator напрямую для гарантированного отклика на всех устройствах (в т.ч. Realme)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(40)
+                }
+                delay(60L)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(30)
+                }
             }
             delay(CrackHapticTailDelayMs)
             if (phase == CookiePhase.BREAKING && latestError == null) {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                delay(50L)
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(40)
+                }
             }
-            delay(BreakAnimationMs - CrackHapticDelayMs - CrackHapticTailDelayMs - 100L)
+            delay(BreakAnimationMs - CrackHapticDelayMs - CrackHapticTailDelayMs - 120L)
             if (phase == CookiePhase.BREAKING && latestError == null) {
                 phase = if (latestCookieMessage != null) {
                     CookiePhase.REVEALED
@@ -247,7 +284,11 @@ fun CookieScreen(
             !onboardingDismissedInSession
 
     val startCookieBreak = {
-        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        // Для начального тапа используем игнорирование системных настроек, чтобы Realme не блокировал
+        view.performHapticFeedback(
+            HapticFeedbackConstants.VIRTUAL_KEY,
+            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING or HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
+        )
         phase = CookiePhase.BREAKING
         viewModel.breakCookie()
     }
