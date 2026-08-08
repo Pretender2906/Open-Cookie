@@ -20,6 +20,7 @@ import com.opencookie.app.domain.model.NetworkFeePriority
 import com.opencookie.app.domain.model.TransactionOrigin
 import com.opencookie.app.domain.model.TransactionState
 import com.opencookie.app.domain.model.chainSyncState
+import com.opencookie.app.domain.model.displayLabel
 import com.opencookie.app.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -118,7 +119,7 @@ class ProfileViewModel @Inject constructor(
             callsToday = session.profile?.callsToday ?: 0,
             maxCallsPerDay = session.config?.maxCallsPerDay ?: 0,
             totalCalls = session.profile?.totalCalls ?: 0,
-            clusterName = session.cluster.cluster.name,
+            clusterName = session.cluster.cluster.displayLabel,
             networkFeePriority = networkFeePriority,
             appLanguage = appLanguage,
             hasProfile = session.profile != null,
@@ -139,7 +140,7 @@ class ProfileViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = ProfileUiState(
             walletAddress = appSession.state.value.walletAddress?.toBase58() ?: "",
-            clusterName = appSession.state.value.cluster.cluster.name,
+            clusterName = appSession.state.value.cluster.cluster.displayLabel,
             networkFeePriority = runBlocking { preferencesStore.getNetworkFeePriority() },
             appLanguage = _appLanguage.value,
         )

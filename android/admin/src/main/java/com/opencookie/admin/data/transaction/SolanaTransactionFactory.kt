@@ -25,9 +25,11 @@ class SolanaTransactionFactory @Inject constructor() {
     ): ByteArray {
         require(instructions.isNotEmpty())
 
+        val instructionsWithBudget = prependComputeBudget(instructions)
+
         val mergedMetas = mutableListOf<AccountMeta>()
         mergedMetas.add(AccountMeta(feePayer, isSigner = true, isWritable = true))
-        for (instruction in instructions) {
+        for (instruction in instructionsWithBudget) {
             mergedMetas.addAll(instruction.keys)
             mergedMetas.add(AccountMeta(instruction.programId, isSigner = false, isWritable = false))
         }
@@ -72,8 +74,8 @@ class SolanaTransactionFactory @Inject constructor() {
         writeCompactU16(messageBody, finalKeys.size)
         for (key in finalKeys) messageBody.put(key.pubkey.bytes)
         messageBody.put(blockhashBytes)
-        writeCompactU16(messageBody, instructions.size)
-        for (instruction in instructions) {
+        writeCompactU16(messageBody, instructionsWithBudget.size)
+        for (instruction in instructionsWithBudget) {
             messageBody.put(keyIndex[instruction.programId]!!.toByte())
             writeCompactU16(messageBody, instruction.keys.size)
             for (key in instruction.keys) {
@@ -95,6 +97,20 @@ class SolanaTransactionFactory @Inject constructor() {
         return ByteArray(txBuf.remaining()).also { txBuf.get(it) }
     }
 
+    private fun prependComputeBudget(
+        instructions: List<TransactionInstruction>
+    ): List<TransactionInstruction> {
+        val budgetIx = TransactionInstruction(
+            programId = COMPUTE_BUDGET_PROGRAM_ID,
+            keys = emptyList(),
+            data = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN).apply {
+                put(2) // SetComputeUnitLimit discriminator
+                putInt(ADMIN_COMPUTE_UNIT_LIMIT)
+            }.array()
+        )
+        return listOf(budgetIx) + instructions
+    }
+
     private fun writeCompactU16(buf: ByteBuffer, value: Int) {
         var v = value
         while (true) {
@@ -107,5 +123,10 @@ class SolanaTransactionFactory @Inject constructor() {
                 buf.put((b or 0x80).toByte())
             }
         }
+    }
+
+    companion object {
+        private val COMPUTE_BUDGET_PROGRAM_ID = PublicKey("ComputeBudget111111111111111111111111111111")
+        private const val ADMIN_COMPUTE_UNIT_LIMIT = 40_000
     }
 }

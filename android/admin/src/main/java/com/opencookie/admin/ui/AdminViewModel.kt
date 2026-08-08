@@ -35,7 +35,7 @@ data class AdminUiState(
     val isWalletConnected: Boolean = false,
     val walletAddress: String? = null,
     val walletLabel: String? = null,
-    val cluster: Cluster = Cluster.Devnet,
+    val cluster: Cluster = Cluster.MainnetBeta,
     val isAdminAuthorized: Boolean = false,
     val canAcceptAdmin: Boolean = false,
     val isLoading: Boolean = false,

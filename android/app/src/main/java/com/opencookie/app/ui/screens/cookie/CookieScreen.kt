@@ -171,12 +171,16 @@ fun CookieScreen(
             delay(CrackHapticDelayMs)
             if (phase == CookiePhase.BREAKING && latestError == null) {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                delay(50L)
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
             }
             delay(CrackHapticTailDelayMs)
             if (phase == CookiePhase.BREAKING && latestError == null) {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                delay(50L)
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
             }
-            delay(BreakAnimationMs - CrackHapticDelayMs - CrackHapticTailDelayMs)
+            delay(BreakAnimationMs - CrackHapticDelayMs - CrackHapticTailDelayMs - 100L)
             if (phase == CookiePhase.BREAKING && latestError == null) {
                 phase = if (latestCookieMessage != null) {
                     CookiePhase.REVEALED

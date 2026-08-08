@@ -65,7 +65,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "DEFAULT_CLUSTER", "\"devnet\"")
+            buildConfigField("String", "DEFAULT_CLUSTER", "\"mainnetbeta\"")
             isMinifyEnabled = false
             isDebuggable = true
         }

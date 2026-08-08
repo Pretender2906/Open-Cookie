@@ -48,8 +48,8 @@ class ComputeBudgetPolicy @Inject constructor(
     }
 
     companion object {
-        const val REGULAR_COMPUTE_UNIT_LIMIT = 40_000
-        const val HEAVY_COMPUTE_UNIT_LIMIT = 80_000
+        const val REGULAR_COMPUTE_UNIT_LIMIT = 20_000
+        const val HEAVY_COMPUTE_UNIT_LIMIT = 40_000
         const val STANDARD_PRICE_MICROLAMPORTS = 100_000L
         const val FAST_PRICE_MICROLAMPORTS = 250_000L
     }

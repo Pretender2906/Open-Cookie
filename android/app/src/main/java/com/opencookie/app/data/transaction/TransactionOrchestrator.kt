@@ -20,6 +20,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,8 +35,6 @@ sealed interface Action {
 data class BreakCookieTxResult(
     val signature: String,
     val messageIndex: Int,
-    val totalCalls: Long,
-    val callsToday: Int,
 )
 
 @Singleton
@@ -112,6 +113,10 @@ class TransactionOrchestrator @Inject constructor(
                             if (!hadProfile) {
                                 appSession.markProfileCreatedLocally()
                             }
+                            // Always refresh profile after BreakCookie to sync stats from chain
+                            appSession.state.value.walletAddress?.let {
+                                profileRepository.fetchProfile(it)
+                            }
                         } else {
                             profileRepository.fetchProfile(wallet)
                         }
@@ -180,20 +185,16 @@ class TransactionOrchestrator @Inject constructor(
         }
     }
 
-    suspend fun fetchBreakCookieResult(signature: String): Result<BreakCookieTxResult> {
-        repeat(5) { attempt ->
-            if (attempt > 0) delay(400L * attempt)
-            val meta = rpcClient.getTransaction(signature).getOrNull()
-            val returnData = meta?.returnData
-            if (returnData != null) {
-                val bytes = rpcClient.decodeReturnData(returnData) ?: return@repeat
-                val parsed = ReturnDataParser.parseCookieResult(bytes)
-                return Result.success(
-                    BreakCookieTxResult(signature, parsed.messageIndex, parsed.totalCalls, parsed.callsToday),
-                )
-            }
-        }
-        return Result.failure(AppError.RevealMessageFailed)
+    fun deriveBreakCookieResult(signature: String): BreakCookieTxResult {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(signature.toByteArray())
+        // Use first 8 bytes for a stable large positive index
+        val hashValue = ByteBuffer.wrap(hashBytes).order(ByteOrder.BIG_ENDIAN).long and Long.MAX_VALUE
+
+        return BreakCookieTxResult(
+            signature = signature,
+            messageIndex = (hashValue % Int.MAX_VALUE).toInt(),
+        )
     }
 
     private data class SentPayload(val signature: String, val signed: ByteArray, val unsigned: ByteArray)

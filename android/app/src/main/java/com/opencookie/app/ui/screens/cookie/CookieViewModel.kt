@@ -117,20 +117,9 @@ class CookieViewModel @Inject constructor(
         val started = transactionRunner.launch(Action.BreakCookie, TransactionOrigin.BreakCookie) { state ->
             when (state) {
                 is TransactionState.Confirmed -> {
-                    viewModelScope.launch {
-                        val result = transactionOrchestrator.fetchBreakCookieResult(state.signature)
-                        result.onSuccess { cookieResult ->
-                            appSession.applyBreakCookieStats(
-                                totalCalls = cookieResult.totalCalls,
-                                callsToday = cookieResult.callsToday,
-                            )
-                            _cookieMessage.value = cookieRepository.cookieMessage(cookieResult.messageIndex)
-                            _cookieOpeningPending.value = false
-                        }.onFailure {
-                            _error.value = (it as? AppError)?.asUiText() ?: UiText.StringResource(R.string.error_read_cookie_failed)
-                            _cookieOpeningPending.value = false
-                        }
-                    }
+                    val result = transactionOrchestrator.deriveBreakCookieResult(state.signature)
+                    _cookieMessage.value = cookieRepository.cookieMessage(result.messageIndex)
+                    _cookieOpeningPending.value = false
                 }
                 is TransactionState.Failed -> {
                     _error.value = state.error.asUiText()

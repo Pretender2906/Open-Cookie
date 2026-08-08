@@ -426,7 +426,10 @@ private fun LanguagePickerDialog(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                 )
-                AppLanguage.entries.forEach { language ->
+                val languages = remember {
+                    AppLanguage.entries.filter { it != AppLanguage.SystemDefault }
+                }
+                languages.forEachIndexed { index, language ->
                     val isSelected = language == selected
                     Row(
                         modifier = Modifier
@@ -455,7 +458,7 @@ private fun LanguagePickerDialog(
                             },
                         )
                     }
-                    if (language != AppLanguage.entries.last()) {
+                    if (index < languages.lastIndex) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),

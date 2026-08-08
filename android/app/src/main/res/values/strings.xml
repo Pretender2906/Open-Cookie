@@ -72,7 +72,7 @@
     <string name="error_wallet_signing_interrupted">Wallet signing interrupted — keep the wallet open until approval completes</string>
     <string name="error_wallet_connect_timeout">Wallet connect timed out — open your wallet app and approve the request</string>
     <string name="error_wallet_activity_unavailable">App screen unavailable — reopen Open Cookie and try again</string>
-    <string name="error_wallet_cluster_mismatch_debug">Wallet session was on another network — open Profile, log out, reconnect on Devnet</string>
+    <string name="error_wallet_cluster_mismatch_debug">Wallet session was on another network — open Profile, log out and reconnect on the correct network</string>
     <string name="error_wallet_cluster_mismatch_release">App and wallet are on different networks — set your wallet to Mainnet, then try again</string>
     <string name="error_config_not_loaded">Chain data still loading — please wait a moment</string>
     <string name="error_blockhash_expired">Transaction stale — tap again</string>

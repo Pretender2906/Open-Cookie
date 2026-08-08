@@ -45,14 +45,13 @@ class AppLocaleManager @Inject constructor(
     }
 
     private fun fromLocaleList(locales: LocaleListCompat): AppLanguage {
-        if (locales.isEmpty) return AppLanguage.SystemDefault
-        val first = locales[0] ?: return AppLanguage.SystemDefault
+        if (locales.isEmpty) return AppLanguage.English
+        val first = locales[0] ?: return AppLanguage.English
         return when (first.language) {
-            "en" -> AppLanguage.English
             "uk" -> AppLanguage.Ukrainian
             "es" -> AppLanguage.Spanish
             "zh" -> AppLanguage.ChineseSimplified
-            else -> AppLanguage.SystemDefault
+            else -> AppLanguage.English
         }
     }
 }

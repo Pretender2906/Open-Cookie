@@ -33,7 +33,7 @@
     <string name="retry">Спробувати ще раз</string>
     <string name="dismiss_message">Закрити</string>
     <string name="profile_title">Профіль</string>
-    <string name="disconnect_wallet">Вийти</string>
+    <string name="disconnect_wallet">Відключити гаманець</string>
     <string name="profile_close">Закрити профіль</string>
     <string name="profile_close_confirm_title">Закрити профіль у мережі?</string>
     <string name="profile_close_confirm_message">Ваш профіль буде видалено, а оренду повернуто на гаманець. Ви зможете створити новий профіль коли наступного разу відкриєте печиво</string>
@@ -72,7 +72,7 @@
     <string name="error_wallet_signing_interrupted">Підписання перервано — тримайте гаманець відкритим до завершення</string>
     <string name="error_wallet_connect_timeout">Час підключення вичерпано — відкрийте гаманець і підтвердіть запит</string>
     <string name="error_wallet_activity_unavailable">Не вдалося повернутися до Open Cookie — відкрийте застосунок ще раз</string>
-    <string name="error_wallet_cluster_mismatch_debug">Гаманець підключено до іншої мережі — вийдіть із профілю та підключіться до Devnet</string>
+    <string name="error_wallet_cluster_mismatch_debug">Гаманець підключено до іншої мережі — вийдіть із профілю та підключіться до потрібної мережі</string>
     <string name="error_wallet_cluster_mismatch_release">Додаток і гаманець у різних мережах — перемкніть гаманець на Mainnet</string>
     <string name="error_config_not_loaded">On-chain дані ще завантажуються — зачекайте хвилинку</string>
     <string name="error_blockhash_expired">Транзакція застаріла — натисніть ще раз</string>

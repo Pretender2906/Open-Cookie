@@ -72,7 +72,7 @@
     <string name="error_wallet_signing_interrupted">Firma interrumpida; mantén la billetera abierta hasta que termine la aprobación</string>
     <string name="error_wallet_connect_timeout">Tiempo de espera agotado; abre tu billetera y aprueba la solicitud</string>
     <string name="error_wallet_activity_unavailable">No se pudo volver a Open Cookie — ábrela de nuevo</string>
-    <string name="error_wallet_cluster_mismatch_debug">La sesión estaba en otra red; ve a Perfil, cierra sesión y vuelve a conectar en Devnet</string>
+    <string name="error_wallet_cluster_mismatch_debug">La sesión estaba en otra red; ve a Perfil, cierra sesión y vuelve a conectar en la red correcta</string>
     <string name="error_wallet_cluster_mismatch_release">La app y la billetera están en redes diferentes; configura tu billetera en Mainnet e intenta de nuevo</string>
     <string name="error_config_not_loaded">Los datos on-chain aún se están cargando</string>
     <string name="error_blockhash_expired">Transacción vencida; toca de nuevo</string>
