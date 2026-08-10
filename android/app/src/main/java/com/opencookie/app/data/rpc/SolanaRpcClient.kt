@@ -15,6 +15,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.delay
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -212,6 +213,12 @@ class SolanaRpcClient @Inject constructor(
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: SocketTimeoutException) {
                 lastException = e
+                rotateEndpointIfApplicable()
+                if (attempt == retryPolicy.maxRetries) break
+                delay(retryPolicy.delayForAttempt(attempt))
+            } catch (e: SerializationException) {
+                lastException = e
+                Log.w(TAG, "Serialization error on $rpcEndpoint, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
