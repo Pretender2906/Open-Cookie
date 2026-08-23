@@ -168,7 +168,7 @@ class SolanaRpcClient @Inject constructor(
                 setBody(json.encodeToString(RpcRequest.serializer(), request))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "HTTP POST FAILED: ${e.message}", e)
+            Log.e(TAG, "HTTP POST FAILED [${maskEndpoint(rpcEndpoint)}]: ${e.message}")
             throw e
         }
 
@@ -184,6 +184,7 @@ class SolanaRpcClient @Inject constructor(
             } else {
                 -1 to errorElement.toString()
             }
+            Log.e(TAG, "RPC ERROR [${maskEndpoint(rpcEndpoint)}]: $code - $message")
             throw RpcException(code, message)
         }
 
@@ -208,28 +209,33 @@ class SolanaRpcClient @Inject constructor(
                 return Result.success(block())
             } catch (e: RpcException) {
                 lastException = e
-                if (shouldFailoverRpc(e)) rotateEndpointIfApplicable()
+                val failover = shouldFailoverRpc(e)
+                Log.w(TAG, "Attempt $attempt failed on ${maskEndpoint(rpcEndpoint)}: RPC $e (failover=$failover)")
+                if (failover) rotateEndpointIfApplicable()
                 if (!retryPolicy.isRetryable(e.code) || attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: SocketTimeoutException) {
                 lastException = e
+                Log.w(TAG, "Attempt $attempt timeout on ${maskEndpoint(rpcEndpoint)}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: SerializationException) {
                 lastException = e
-                Log.w(TAG, "Serialization error on $rpcEndpoint, rotating...")
+                Log.w(TAG, "Attempt $attempt serialization error on ${maskEndpoint(rpcEndpoint)}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: IOException) {
                 lastException = e
+                Log.w(TAG, "Attempt $attempt IO error on ${maskEndpoint(rpcEndpoint)}: ${e.message}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error on ${maskEndpoint(rpcEndpoint)}: ${e.message}", e)
                 return Result.failure(mapToAppError(e))
             }
         }
@@ -237,10 +243,11 @@ class SolanaRpcClient @Inject constructor(
     }
 
     private fun shouldFailoverRpc(error: RpcException): Boolean {
-        if (error.code == -32000 || error.code == -1 || error.code == 403) return true
+        if (error.code == -32000 || error.code == -1 || error.code == 403 || error.code == 429 || error.code == 35) return true
         val message = error.message.orEmpty()
         return message.contains("Unauthorized", ignoreCase = true) ||
-            message.contains("rate limit", ignoreCase = true)
+            message.contains("rate limit", ignoreCase = true) ||
+            message.contains("chain is not available", ignoreCase = true)
     }
 
     private fun rotateEndpointIfApplicable() {
@@ -249,7 +256,21 @@ class SolanaRpcClient @Inject constructor(
         val next = RpcEndpointPool.nextAfter(rpcEndpoint, cluster)
         if (next == rpcEndpoint) return
         rpcEndpoint = next
-        Log.w(TAG, "RPC failover [$cluster] -> $rpcEndpoint")
+        Log.w(TAG, "RPC failover [$cluster] -> ${maskEndpoint(rpcEndpoint)}")
+    }
+
+    private fun maskEndpoint(url: String): String = try {
+        val uri = java.net.URI(url)
+        val host = uri.host ?: url
+        if (url.contains("api-key=")) {
+            "$host?api-key=***"
+        } else if (uri.path.length > 10) {
+            "$host/...${uri.path.takeLast(4)}"
+        } else {
+            host
+        }
+    } catch (e: Exception) {
+        "unknown-host"
     }
 
     companion object {

@@ -119,7 +119,7 @@ class SolanaRpcClient @Inject constructor(
         val request = RpcRequest(method = method, params = params.toList())
         val requestBody = json.encodeToString(RpcRequest.serializer(), request)
 
-        Log.d(TAG, ">>> RPC Request to $rpcEndpoint: $requestBody")
+        Log.d(TAG, ">>> RPC Request to ${maskEndpoint(rpcEndpoint)}: $method")
 
         val response = httpClient.post(rpcEndpoint) {
             contentType(ContentType.Application.Json)
@@ -130,9 +130,9 @@ class SolanaRpcClient @Inject constructor(
         }
 
         val responseBody = response.body<String>()
-        Log.d(TAG, "<<< RPC Response from $rpcEndpoint: $responseBody")
 
         if (!response.status.isSuccess()) {
+            Log.e(TAG, "<<< HTTP ERROR [${maskEndpoint(rpcEndpoint)}]: ${response.status.value}")
             throw RpcException(response.status.value, "HTTP ${response.status.value}: $responseBody")
         }
         if (responseBody.isBlank()) {
@@ -142,7 +142,8 @@ class SolanaRpcClient @Inject constructor(
         val rpcResponse = try {
             json.decodeFromString(RpcResponse.serializer(), responseBody)
         } catch (e: Exception) {
-            throw RpcException(-1, "Invalid JSON: $responseBody")
+            Log.e(TAG, "<<< JSON DECODE FAILED [${maskEndpoint(rpcEndpoint)}]")
+            throw RpcException(-1, "Invalid JSON")
         }
 
         if (rpcResponse.error != null) {
@@ -154,6 +155,7 @@ class SolanaRpcClient @Inject constructor(
             } else {
                 -1 to errorElement.toString()
             }
+            Log.e(TAG, "<<< RPC ERROR [${maskEndpoint(rpcEndpoint)}]: $code - $message")
             throw RpcException(code, message)
         }
         val result = rpcResponse.result ?: throw RpcException(-1, "Null result")
@@ -167,7 +169,6 @@ class SolanaRpcClient @Inject constructor(
         preferencesStore.saveLastGoodRpcEndpoint(cluster, rpcEndpoint)
         lastPersistedCluster = cluster
         lastPersistedEndpoint = rpcEndpoint
-        Log.i(TAG, "RPC last-good persisted [$cluster] -> $rpcEndpoint")
     }
 
     private suspend fun <T> withRetry(block: suspend () -> T): Result<T> {
@@ -177,35 +178,38 @@ class SolanaRpcClient @Inject constructor(
                 return Result.success(block())
             } catch (e: RpcException) {
                 lastException = e
-                if (shouldFailoverRpc(e)) {
-                    rotateEndpointIfApplicable()
-                }
+                val failover = shouldFailoverRpc(e)
+                Log.w(TAG, "Attempt $attempt failed on ${maskEndpoint(rpcEndpoint)}: RPC $e (failover=$failover)")
+                if (failover) rotateEndpointIfApplicable()
                 if (!retryPolicy.isRetryable(e.code) || (attempt == retryPolicy.maxRetries && e.code != -1)) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: ResponseException) {
                 lastException = e
+                Log.w(TAG, "Attempt $attempt HTTP error on ${maskEndpoint(rpcEndpoint)}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: SocketTimeoutException) {
                 lastException = e
+                Log.w(TAG, "Attempt $attempt timeout on ${maskEndpoint(rpcEndpoint)}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: IOException) {
                 lastException = e
+                Log.w(TAG, "Attempt $attempt IO error on ${maskEndpoint(rpcEndpoint)}: ${e.message}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: SerializationException) {
                 lastException = e
-                Log.w(TAG, "Serialization error on $rpcEndpoint, rotating...")
+                Log.w(TAG, "Attempt $attempt serialization error on ${maskEndpoint(rpcEndpoint)}, rotating...")
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
             } catch (e: Exception) {
                 lastException = e
-                Log.w(TAG, "Unexpected error on $rpcEndpoint: ${e.message}")
+                Log.e(TAG, "Unexpected error on ${maskEndpoint(rpcEndpoint)}: ${e.message}", e)
                 rotateEndpointIfApplicable()
                 if (attempt == retryPolicy.maxRetries) break
                 delay(retryPolicy.delayForAttempt(attempt))
@@ -215,14 +219,11 @@ class SolanaRpcClient @Inject constructor(
     }
 
     private fun shouldFailoverRpc(error: RpcException): Boolean {
-        if (error.code == -32000 || error.code == -1) return true
-        if (error.code in 400..599) return true
+        if (error.code == -32000 || error.code == -1 || error.code == 403 || error.code == 429 || error.code == 35) return true
         val message = error.message.orEmpty()
         return message.contains("Unauthorized", ignoreCase = true) ||
             message.contains("rate limit", ignoreCase = true) ||
-            message.contains("Too many requests", ignoreCase = true) ||
-            message.contains("Empty response", ignoreCase = true) ||
-            message.contains("Invalid JSON", ignoreCase = true)
+            message.contains("chain is not available", ignoreCase = true)
     }
 
     private fun rotateEndpointIfApplicable() {
@@ -231,7 +232,21 @@ class SolanaRpcClient @Inject constructor(
         val next = RpcEndpointPool.nextAfter(rpcEndpoint, cluster)
         if (next == rpcEndpoint) return
         rpcEndpoint = next
-        Log.w(TAG, "RPC failover [$cluster] -> $rpcEndpoint")
+        Log.w(TAG, "RPC failover [$cluster] -> ${maskEndpoint(rpcEndpoint)}")
+    }
+
+    private fun maskEndpoint(url: String): String = try {
+        val uri = java.net.URI(url)
+        val host = uri.host ?: url
+        if (url.contains("api-key=")) {
+            "$host?api-key=***"
+        } else if (uri.path.length > 10) {
+            "$host/...${uri.path.takeLast(4)}"
+        } else {
+            host
+        }
+    } catch (_: Exception) {
+        "unknown-host"
     }
 
     private fun mapError(e: Throwable): AdminError {

@@ -8,7 +8,6 @@ object RpcEndpointPool {
 
     private const val DEVNET_PUBLIC = "https://api.devnet.solana.com"
 
-    private const val MAINNET_DRPC = "https://solana.drpc.org"
     private const val MAINNET_PUBLICNODE = "https://solana-rpc.publicnode.com"
     private const val MAINNET_PUBLIC = "https://api.mainnet-beta.solana.com"
 
@@ -20,12 +19,17 @@ object RpcEndpointPool {
 
         Cluster.MainnetBeta -> {
             val list = mutableListOf<String>()
+            if (BuildConfig.MAINNET_ALCHEMY_URL.isNotBlank()) {
+                list.add(BuildConfig.MAINNET_ALCHEMY_URL)
+            }
+            if (BuildConfig.MAINNET_HELIUS_URL.isNotBlank()) {
+                list.add(BuildConfig.MAINNET_HELIUS_URL)
+            }
+            list.add(MAINNET_PUBLICNODE)
+            list.add(MAINNET_PUBLIC)
             if (BuildConfig.MAINNET_RPC_URL.isNotBlank()) {
                 list.add(BuildConfig.MAINNET_RPC_URL)
             }
-            list.add(MAINNET_DRPC)
-            list.add(MAINNET_PUBLICNODE)
-            list.add(MAINNET_PUBLIC)
             list.distinct()
         }
     }

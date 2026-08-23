@@ -8,7 +8,6 @@ object RpcEndpointPool {
     private const val DEVNET_PUBLIC = "https://api.devnet.solana.com"
     private const val DEVNET_ANKR = "https://rpc.ankr.com/solana_devnet"
     private const val MAINNET_PUBLIC = "https://api.mainnet-beta.solana.com"
-    private const val MAINNET_DRPC = "https://solana.drpc.org"
     private const val MAINNET_PUBLICNODE = "https://solana-rpc.publicnode.com"
 
     fun endpoints(cluster: Cluster): List<String> = when (cluster) {
@@ -19,10 +18,11 @@ object RpcEndpointPool {
         ).filter { it.isNotBlank() }.distinct()
 
         Cluster.MainnetBeta -> listOf(
-            BuildConfig.MAINNET_RPC_URL,
-            MAINNET_DRPC,
+            BuildConfig.MAINNET_ALCHEMY_URL,
+            BuildConfig.MAINNET_HELIUS_URL,
             MAINNET_PUBLICNODE,
             MAINNET_PUBLIC,
+            BuildConfig.MAINNET_RPC_URL,
         ).filter { it.isNotBlank() }.distinct()
     }
 

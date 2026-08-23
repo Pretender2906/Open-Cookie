@@ -24,6 +24,11 @@ val mainnetRpcUrl = localProperties.getProperty(
     "mainnet.rpc.url",
     "https://api.mainnet-beta.solana.com",
 )
+val alchemyKey = localProperties.getProperty("mainnet.alchemy.key", "")
+val heliusKey = localProperties.getProperty("mainnet.helius.key", "")
+
+val alchemyUrl = if (alchemyKey.isNotBlank()) "https://solana-mainnet.g.alchemy.com/v2/$alchemyKey" else ""
+val heliusUrl = if (heliusKey.isNotBlank()) "https://mainnet.helius-rpc.com/?api-key=$heliusKey" else ""
 
 plugins {
     id("com.android.application")
@@ -47,6 +52,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEVNET_RPC_URL", "\"$devnetRpcUrl\"")
         buildConfigField("String", "MAINNET_RPC_URL", "\"$mainnetRpcUrl\"")
+        buildConfigField("String", "MAINNET_ALCHEMY_URL", "\"$alchemyUrl\"")
+        buildConfigField("String", "MAINNET_HELIUS_URL", "\"$heliusUrl\"")
     }
 
     signingConfigs {

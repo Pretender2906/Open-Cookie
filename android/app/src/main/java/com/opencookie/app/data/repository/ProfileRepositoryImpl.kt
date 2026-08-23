@@ -25,49 +25,42 @@ class ProfileRepositoryImpl @Inject constructor(
             appSession.setProfilePresence(ProfilePresence.Checking)
         }
         val (pda) = ProgramAddresses.userProfile(wallet)
-        val delays = listOf(0L, 250L, 500L, 1000L)
-        var lastRpcError: AppError? = null
-
-        for (delayMs in delays) {
-            if (delayMs > 0) kotlinx.coroutines.delay(delayMs)
-            val accountInfoResult = rpcClient.getAccountInfo(pda)
-            if (accountInfoResult.isFailure) {
-                lastRpcError = accountInfoResult.exceptionOrNull() as? AppError ?: AppError.Unknown(
-                    accountInfoResult.exceptionOrNull(),
-                )
-                continue
-            }
-
-            val accountInfo = accountInfoResult.getOrNull()
-            if (accountInfo == null) {
-                appSession.clearProfile()
-                appSession.setProfilePresence(ProfilePresence.NotExists)
-                appSession.markProfileRefreshed()
-                return Result.failure(AppError.ProfileNotFound)
-            }
-
-            val data = rpcClient.decodeAccountData(accountInfo) ?: continue
-            return try {
-                val profile = AccountDeserializer.deserializeUserProfile(data)
-                appSession.updateProfile(profile)
-                appSession.setProfilePresence(ProfilePresence.Exists)
-                appSession.markProfileRefreshed()
-                Result.success(profile)
-            } catch (e: Exception) {
-                appSession.setProfilePresence(ProfilePresence.CheckFailed)
-                Result.failure(AppError.Unknown(e))
-            }
-        }
-
-        if (lastRpcError != null) {
+        
+        val accountInfoResult = rpcClient.getAccountInfo(pda)
+        if (accountInfoResult.isFailure) {
+            val lastRpcError = accountInfoResult.exceptionOrNull() as? AppError ?: AppError.Unknown(
+                accountInfoResult.exceptionOrNull(),
+            )
             appSession.setProfilePresence(ProfilePresence.CheckFailed)
             return Result.failure(lastRpcError)
         }
 
-        appSession.clearProfile()
-        appSession.setProfilePresence(ProfilePresence.NotExists)
-        appSession.markProfileRefreshed()
-        return Result.failure(AppError.ProfileNotFound)
+        val accountInfo = accountInfoResult.getOrNull()
+        if (accountInfo == null) {
+            appSession.clearProfile()
+            appSession.setProfilePresence(ProfilePresence.NotExists)
+            appSession.markProfileRefreshed()
+            return Result.failure(AppError.ProfileNotFound)
+        }
+
+        val data = rpcClient.decodeAccountData(accountInfo)
+        if (data == null) {
+            appSession.clearProfile()
+            appSession.setProfilePresence(ProfilePresence.NotExists)
+            appSession.markProfileRefreshed()
+            return Result.failure(AppError.ProfileNotFound)
+        }
+
+        return try {
+            val profile = AccountDeserializer.deserializeUserProfile(data)
+            appSession.updateProfile(profile)
+            appSession.setProfilePresence(ProfilePresence.Exists)
+            appSession.markProfileRefreshed()
+            Result.success(profile)
+        } catch (e: Exception) {
+            appSession.setProfilePresence(ProfilePresence.CheckFailed)
+            Result.failure(AppError.Unknown(e))
+        }
     }
 
     override suspend fun fetchConfig(): Result<ProgramConfig> {
