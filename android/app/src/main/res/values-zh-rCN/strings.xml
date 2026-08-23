@@ -9,6 +9,7 @@
     <string name="profile_create_confirm_message">要开启你的第一块饼干，我们需要先创建你的 on-chain 个人资料。\n这需要支付少量 SOL 作为账户租金。\n账户关闭后，租金会退回到你的钱包。</string>
     <string name="profile_create_confirm">继续</string>
     <string name="profile_create_cancel">取消</string>
+    <string name="cancel">取消</string>
     <string name="profile_check_failed">个人资料验证失败，请重试</string>
     <string name="cookie_cost">%1$s SOL</string>
     <string name="open_another">再开启一个</string>

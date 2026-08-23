@@ -9,6 +9,7 @@
     <string name="profile_create_confirm_message">To open your first cookie, we need to create your on-chain profile.\nThis requires a small amount of SOL for account rent.\nThe rent can be recovered when the account is closed.</string>
     <string name="profile_create_confirm">Continue</string>
     <string name="profile_create_cancel">Cancel</string>
+    <string name="cancel">Cancel</string>
     <string name="profile_check_failed">Couldn\u2019t verify your profile — try again</string>
     <string name="cookie_cost">%1$s SOL</string>
     <string name="open_another">Open another</string>

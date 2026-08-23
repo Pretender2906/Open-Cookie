@@ -107,7 +107,7 @@ class WalletInteractionTracker @Inject constructor() {
 
     companion object {
         private const val TAG = "WalletInteraction"
-        private const val ABANDON_GRACE_MS = 15_000L
-        private const val MIN_TRANSACT_AGE_MS = 2_000L
+        private const val ABANDON_GRACE_MS = 3_000L
+        private const val MIN_TRANSACT_AGE_MS = 1_000L
     }
 }

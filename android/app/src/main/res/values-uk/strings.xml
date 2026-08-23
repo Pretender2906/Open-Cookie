@@ -9,6 +9,7 @@
     <string name="profile_create_confirm_message">Щоб відкрити своє перше печиво, потрібно створити on-chain профіль. Для цього знадобиться невелика сума SOL на оренду акаунта. Після закриття профілю ці кошти буде повернуто</string>
     <string name="profile_create_confirm">Продовжити</string>
     <string name="profile_create_cancel">Скасувати</string>
+    <string name="cancel">Скасувати</string>
     <string name="profile_check_failed">Не вдалося перевірити профіль — спробуйте ще раз</string>
     <string name="cookie_cost">%1$s SOL</string>
     <string name="open_another">Відкрити ще одне печиво</string>

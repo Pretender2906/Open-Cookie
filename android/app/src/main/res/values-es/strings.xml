@@ -9,6 +9,7 @@
     <string name="profile_create_confirm_message">Para abrir tu primera galleta, necesitamos crear tu perfil on-chain.\nEsto requiere una pequeña cantidad de SOL para el alquiler de la cuenta.\nPuedes recuperar el alquiler al cerrar la cuenta.</string>
     <string name="profile_create_confirm">Continuar</string>
     <string name="profile_create_cancel">Cancelar</string>
+    <string name="cancel">Cancelar</string>
     <string name="profile_check_failed">No se pudo verificar tu perfil, intenta de nuevo</string>
     <string name="cookie_cost">%1$s SOL</string>
     <string name="open_another">Abrir otra</string>
