@@ -116,7 +116,7 @@ class ProfileViewModel @Inject constructor(
             walletAddress = session.walletAddress?.toBase58() ?: "",
             balanceSol = balanceSol,
             balanceKnown = balanceKnown,
-            callsToday = session.profile?.callsToday ?: 0,
+            callsToday = session.profile?.effectiveCallsToday() ?: 0,
             maxCallsPerDay = session.config?.maxCallsPerDay ?: 0,
             totalCalls = session.profile?.totalCalls ?: 0,
             clusterName = session.cluster.cluster.displayLabel,

@@ -8,4 +8,9 @@ data class UserProfile(
     val lastDay: Int,
     val callsToday: Int,
     val bump: Int,
-)
+) {
+    fun effectiveCallsToday(currentTimeMs: Long = System.currentTimeMillis()): Int {
+        val currentDay = (currentTimeMs / 1000 / 86400).toInt()
+        return if (lastDay == currentDay) callsToday else 0
+    }
+}

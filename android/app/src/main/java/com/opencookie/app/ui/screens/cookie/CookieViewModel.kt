@@ -75,8 +75,9 @@ class CookieViewModel @Inject constructor(
     ) { session, globalTx, visualState ->
         val profile = session.profile
         val profileReady = session.isProfilePresenceKnown
+        val effectiveCallsToday = profile?.effectiveCallsToday() ?: 0
         CookieUiState(
-            callsToday = profile?.callsToday ?: 0,
+            callsToday = effectiveCallsToday,
             maxCallsPerDay = session.config?.maxCallsPerDay ?: 0,
             totalCalls = profile?.totalCalls ?: 0,
             cookieMessage = visualState.cookieMessage,
@@ -93,7 +94,7 @@ class CookieViewModel @Inject constructor(
                 !transactionRunner.isActive &&
                 !visualState.cookieOpeningPending &&
                 activityResultSenderRegistry.current() != null &&
-                (profile == null || profile.callsToday < (session.config?.maxCallsPerDay ?: 0)),
+                (profile == null || effectiveCallsToday < (session.config?.maxCallsPerDay ?: 0)),
             profilePresence = session.profilePresence,
             showFirstLaunchOnboarding = session.profilePresence == ProfilePresence.NotExists,
             costSol = session.config?.priceLamports?.let { formatSol(it) },
