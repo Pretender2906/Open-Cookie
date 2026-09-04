@@ -75,7 +75,6 @@ import kotlinx.coroutines.delay
 
 private const val BreakAnimationMs = 1440L
 private const val CrackHapticDelayMs = 720L
-private const val CrackHapticTailDelayMs = 64L
 private const val CookieHalvesOpenMs = 760L
 private const val PaperZoomLeadMs = 400L
 private const val PaperZoomMs = 2160
@@ -94,7 +93,6 @@ fun CookieScreen(
     var phase by rememberSaveable { mutableStateOf(CookiePhase.IDLE) }
     val latestCookieMessage by rememberUpdatedState(uiState.cookieMessage)
     val latestError by rememberUpdatedState(uiState.error)
-    val hapticFeedback = LocalHapticFeedback.current
     val view = LocalView.current
     val context = LocalContext.current
     val vibrator = remember(context) {
@@ -191,33 +189,15 @@ fun CookieScreen(
     }
     LaunchedEffect(phase) {
         if (phase == CookiePhase.BREAKING) {
-            delay(CrackHapticDelayMs)
+            delay(320L)
             if (phase == CookiePhase.BREAKING && latestError == null) {
-                // Используем Vibrator напрямую для гарантированного отклика на всех устройствах (в т.ч. Realme)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(40)
-                }
-                delay(60L)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(30)
-                }
+                CookieHaptics.performPreCrackHaptic(vibrator)
             }
-            delay(CrackHapticTailDelayMs)
+            delay(CrackHapticDelayMs - 320L)
             if (phase == CookiePhase.BREAKING && latestError == null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(40)
-                }
+                CookieHaptics.performMainCrackHaptic(vibrator)
             }
-            delay(BreakAnimationMs - CrackHapticDelayMs - CrackHapticTailDelayMs - 120L)
+            delay(BreakAnimationMs - CrackHapticDelayMs)
             if (phase == CookiePhase.BREAKING && latestError == null) {
                 phase = if (latestCookieMessage != null) {
                     CookiePhase.REVEALED
@@ -284,11 +264,7 @@ fun CookieScreen(
             !onboardingDismissedInSession
 
     val startCookieBreak = {
-        // Для начального тапа используем игнорирование системных настроек, чтобы Realme не блокировал
-        view.performHapticFeedback(
-            HapticFeedbackConstants.VIRTUAL_KEY,
-            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING or HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
-        )
+        CookieHaptics.performTapHaptic(view)
         phase = CookiePhase.BREAKING
         viewModel.breakCookie()
     }

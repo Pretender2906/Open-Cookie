@@ -43,6 +43,10 @@ android {
     namespace = "com.opencookie.app"
     compileSdk = 36
 
+    base {
+        archivesName.set("OpenCookie")
+    }
+
     defaultConfig {
         applicationId = "com.opencookie.app"
         minSdk = 26
@@ -58,13 +62,28 @@ android {
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties["keyAlias"] as? String
-                keyPassword = keystoreProperties["keyPassword"] as? String
-                storeFile = (keystoreProperties["storeFile"] as? String)?.let { storeFilePath ->
-                    val candidate = File(storeFilePath)
-                    if (candidate.isAbsolute) candidate else rootProject.file(storeFilePath)
+                val keyAliasProp = keystoreProperties.getProperty("keyAlias")
+                val keyPasswordProp = keystoreProperties.getProperty("keyPassword")
+                val storeFileProp = keystoreProperties.getProperty("storeFile")
+                val storePasswordProp = keystoreProperties.getProperty("storePassword")
+
+                if (!storeFileProp.isNullOrBlank()) {
+                    val candidateFromRoot = rootProject.file(storeFileProp)
+                    val candidateFromApp = file(storeFileProp)
+                    val absoluteCandidate = File(storeFileProp)
+
+                    val targetFile = when {
+                        absoluteCandidate.isAbsolute && absoluteCandidate.exists() -> absoluteCandidate
+                        candidateFromRoot.exists() -> candidateFromRoot
+                        candidateFromApp.exists() -> candidateFromApp
+                        else -> candidateFromRoot
+                    }
+
+                    storeFile = targetFile
+                    storePassword = storePasswordProp
+                    keyAlias = keyAliasProp
+                    keyPassword = keyPasswordProp
                 }
-                storePassword = keystoreProperties["storePassword"] as? String
             }
         }
     }
@@ -85,7 +104,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.findByName("release")
+            if (releaseSigning?.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 

@@ -47,8 +47,8 @@ android {
         applicationId = "com.opencookie.admin"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 1
+        versionName = "1.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEVNET_RPC_URL", "\"$devnetRpcUrl\"")
         buildConfigField("String", "MAINNET_RPC_URL", "\"$mainnetRpcUrl\"")
